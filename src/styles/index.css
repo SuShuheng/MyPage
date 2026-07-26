@@ -459,6 +459,8 @@ body,
 
 .mypage-widget {
   position: relative;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   overflow: hidden;
   padding: 16px;
@@ -477,9 +479,16 @@ body,
 }
 
 .mypage-widget-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mypage-widget-scale {
   width: calc(100% / var(--mypage-content-scale, 1));
-  height: calc((100% - 42px) / var(--mypage-content-scale, 1));
-  zoom: var(--mypage-content-scale, 1);
+  height: calc(100% / var(--mypage-content-scale, 1));
+  transform: scale(var(--mypage-content-scale, 1));
+  transform-origin: top left;
 }
 
 .mypage-grid > .grid-stack-item > .grid-stack-item-content.mypage-widget {
@@ -488,7 +497,7 @@ body,
 
 .mypage-module-widget {
   width: 100%;
-  height: calc(100% - 42px);
+  height: 100%;
   min-height: 0;
   overflow: hidden;
 }
@@ -581,7 +590,7 @@ body,
 .mypage-widget-chart-layout {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  height: calc(100% - 42px);
+  height: 100%;
   min-height: 0;
 }
 
@@ -623,7 +632,7 @@ body,
   position: relative;
   display: grid;
   align-content: center;
-  height: calc(100% - 42px);
+  height: 100%;
 }
 
 .mypage-metric > strong {
@@ -661,7 +670,7 @@ body,
   display: grid;
   align-content: start;
   gap: 6px;
-  height: calc(100% - 42px);
+  height: 100%;
   overflow: auto;
 }
 
@@ -762,7 +771,7 @@ body,
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 8px;
-  height: calc(100% - 42px);
+  height: 100%;
   min-height: 0;
 }
 
@@ -816,7 +825,7 @@ body,
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 20px;
-  height: calc(100% - 42px);
+  height: 100%;
 }
 
 .mypage-progress-ring {
@@ -872,7 +881,7 @@ body,
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 8px;
-  height: calc(100% - 42px);
+  height: 100%;
 }
 
 .mypage-markdown-content {
@@ -992,7 +1001,7 @@ body,
 
 .mypage-trend-preview {
   width: 100%;
-  height: calc(100% - 42px);
+  height: 100%;
   overflow: visible;
 }
 
@@ -1669,23 +1678,102 @@ button.mypage-overlay {
   min-height: 38px;
 }
 
-.mypage-market-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(270px, .8fr);
-  gap: 14px;
-  align-items: start;
+.mypage-market-browser {
   margin-top: 14px;
+}
+
+.mypage-market-browser.is-detail {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  align-items: start;
+  min-height: min(72vh, 720px);
+  overflow: clip;
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
+  border-radius: 14px;
+  background: var(--background-primary);
+}
+
+.mypage-market-catalog {
+  min-width: 0;
+}
+
+.mypage-market-sidebar {
+  position: sticky;
+  top: 72px;
+  max-height: min(72vh, 720px);
+  padding: 12px;
+  overflow: auto;
+  border-right: 1px solid var(--mypage-border, var(--background-modifier-border));
+  background: var(--background-secondary);
+}
+
+.mypage-market-toolbar.is-sidebar {
+  position: sticky;
+  z-index: 2;
+  top: -12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: -12px -12px 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--mypage-border, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--background-secondary) 96%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.mypage-market-toolbar.is-sidebar > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.mypage-market-sidebar-list {
+  display: grid;
+  gap: 9px;
+}
+
+.mypage-market-inline-detail {
+  min-width: 0;
+  padding: clamp(18px, 3vw, 34px);
+}
+
+.mypage-market-inline-nav {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mypage-border, var(--background-modifier-border));
+}
+
+.mypage-market-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 5px 10px;
+  color: var(--mypage-muted-text, var(--text-muted));
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.mypage-market-back-button:hover {
+  color: var(--mypage-text, var(--text-normal));
+  background: var(--background-modifier-hover);
+}
+
+.mypage-market-inline-heading h2 {
+  margin: 0 0 10px;
+  font-size: clamp(22px, 3vw, 32px);
 }
 
 .mypage-theme-grid,
 .mypage-module-market-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;
 }
 
 .mypage-theme-card,
 .mypage-module-market-card {
+  box-sizing: border-box;
   width: 100%;
   height: auto;
   max-height: none;
@@ -1698,7 +1786,7 @@ button.mypage-overlay {
   border-radius: 12px;
   background: var(--background-secondary);
   box-shadow: none;
-  cursor: default;
+  cursor: pointer;
   transition: border-color 160ms ease, background-color 160ms ease;
 }
 
@@ -1710,12 +1798,27 @@ button.mypage-overlay {
   background: var(--background-modifier-hover);
 }
 
+.mypage-theme-card:focus-visible,
+.mypage-module-market-card:focus-visible {
+  outline: 2px solid var(--mypage-accent, var(--interactive-accent));
+  outline-offset: 2px;
+}
+
 .mypage-theme-card {
   display: grid;
   grid-auto-rows: max-content;
   align-content: start;
   gap: 7px;
   min-height: 196px;
+}
+
+.mypage-theme-card.is-compact {
+  min-height: 0;
+  padding: 11px;
+}
+
+.mypage-theme-card.is-compact .mypage-theme-preview {
+  display: none;
 }
 
 .mypage-theme-preview {
@@ -1745,6 +1848,25 @@ button.mypage-overlay {
   align-items: start;
   gap: 10px;
   min-height: 112px;
+}
+
+.mypage-module-market-card.is-compact {
+  grid-template-columns: 34px minmax(0, 1fr);
+  min-height: 0;
+  padding: 10px;
+}
+
+.mypage-module-market-card.is-compact .mypage-market-module-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+}
+
+.mypage-market-card-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .mypage-card-detail-button {
@@ -1813,6 +1935,25 @@ button.mypage-overlay {
   overflow: auto;
   border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 12px;
+}
+
+.mypage-market-inline-detail .mypage-market-dialog-readme {
+  max-height: none;
+  margin-top: 24px;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+}
+
+.mypage-market-inline-detail .mypage-market-detail-actions {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  margin: 16px 0;
+  padding: 10px 0;
+  border-block: 1px solid var(--mypage-border, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+  backdrop-filter: blur(12px);
 }
 
 .mypage-market-details-modal .mypage-market-detail-actions {
@@ -2073,7 +2214,7 @@ select.has-error {
     flex-direction: column;
   }
 
-  .mypage-market-layout,
+  .mypage-market-browser.is-detail,
   .mypage-active-theme-card,
   .mypage-about-hero {
     grid-template-columns: 1fr;
@@ -2084,8 +2225,11 @@ select.has-error {
     grid-template-columns: 1fr;
   }
 
-  .mypage-market-detail {
+  .mypage-market-sidebar {
     position: static;
+    max-height: 320px;
+    border-right: 0;
+    border-bottom: 1px solid var(--mypage-border, var(--background-modifier-border));
   }
 
   .mypage-about-facts {

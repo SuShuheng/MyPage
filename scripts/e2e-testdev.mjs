@@ -7,12 +7,18 @@ const endpoint = process.env.MYPAGE_CDP_ENDPOINT || "http://127.0.0.1:9229";
 const artifacts = path.resolve("tests", "artifacts");
 await mkdir(artifacts, { recursive: true });
 const startedAt = new Date();
+const assertions = [];
+const recordAssertions = assertions.push.bind(assertions);
+assertions.push = (...items) => {
+  for (const item of items) console.log(`[e2e] ${item}`);
+  return recordAssertions(...items);
+};
 const evidence = {
   command: "npm run test:e2e",
   startedAt: startedAt.toISOString(),
   os: `${process.platform}/${process.arch}`,
   endpoint,
-  assertions: [],
+  assertions,
   consoleErrors: [],
   externalWarnings: [],
   pageErrors: [],
@@ -31,7 +37,7 @@ try {
       const source = message.location().url;
       const entry = `${message.text()}${source ? ` (${source})` : ""}`.slice(0, 1_000);
       if (
-        source.startsWith("https://api.github.com/repos/SuShuHeng/MyPage/") &&
+        source.startsWith("https://api.github.com/repos/SuShuHeng/MyPage") &&
         (message.text().includes("403") || message.text().includes("404"))
       ) {
         evidence.externalWarnings.push(entry);
@@ -221,6 +227,21 @@ try {
     .locator("input");
   await pathTemplate.fill("MyPage/E2E/{timestamp}.md");
   await markdownModal.getByRole("tab", { name: "通用设置" }).click();
+  for (const label of [
+    "内容缩放",
+    "图标缩放",
+    "图表坐标标签",
+    "长标签省略",
+  ]) {
+    await markdownModal.getByText(label, { exact: true }).waitFor({
+      state: "visible",
+    });
+  }
+  await markdownModal
+    .locator(".setting-item")
+    .filter({ hasText: "内容缩放" })
+    .locator('input[type="range"]')
+    .fill("150");
   await markdownModal.getByRole("tab", { name: "高级设置" }).click();
   await markdownModal.getByRole("tab", { name: "内容设置" }).click();
   if ((await pathTemplate.inputValue()) !== "MyPage/E2E/{timestamp}.md") {
@@ -229,7 +250,18 @@ try {
   await markdownModal
     .getByRole("button", { name: "应用到编辑会话" })
     .click();
-  evidence.assertions.push("Content settings are prioritized and survive tab switches");
+  const markdownWidget = page.locator(".mypage-widget").filter({
+    has: page.locator(".mypage-markdown-actions"),
+  }).last();
+  const contentTransform = await markdownWidget
+    .locator(".mypage-widget-scale")
+    .evaluate((element) => globalThis.getComputedStyle(element).transform);
+  if (!contentTransform.startsWith("matrix(1.5,")) {
+    throw new Error(`Widget content scale was not applied: ${contentTransform}`);
+  }
+  evidence.assertions.push(
+    "Content settings are prioritized; content/icon scale and chart label DIY controls are available and applied",
+  );
 
   const heatmapModal = await openWidgetConfiguration(page, "贡献热力图");
   await assertConfigurationTabs(heatmapModal);
@@ -614,8 +646,10 @@ try {
   const timerMarketCard = settingsRoot
     .locator(".mypage-module-market-card")
     .filter({ hasText: "专注番茄钟" });
-  await timerMarketCard.getByRole("button", { name: "详情" }).click();
-  const moduleMarketDetail = page.locator(".mypage-market-details-modal");
+  await timerMarketCard.click();
+  const moduleMarketDetail = settingsRoot.locator(
+    ".mypage-market-inline-detail",
+  );
   await moduleMarketDetail.getByRole("heading", { name: "专注番茄钟" }).waitFor({
     state: "visible",
   });
@@ -623,16 +657,24 @@ try {
     .getByRole("button", { name: /安装|更新|删除/ })
     .first()
     .waitFor({
-    state: "visible",
-  });
+     state: "visible",
+   });
+  if ((await page.locator(".mypage-market-details-modal").count()) !== 0) {
+    throw new Error("Module market still opened details in a dialog.");
+  }
+  await settingsRoot
+    .locator(".mypage-market-sidebar")
+    .waitFor({ state: "visible" });
   await page.screenshot({
     path: path.join(artifacts, "testdev-module-market.png"),
     fullPage: true,
   });
   evidence.assertions.push(
-    "Settings center exposes eight tabs; official market excludes Hello and opens module details in a dialog",
+    "Settings center exposes eight tabs; official market excludes Hello and renders module README details inline with a sidebar",
   );
-  await moduleMarketDetail.locator(".modal-close-button").click();
+  await moduleMarketDetail
+    .getByRole("button", { name: "返回市场目录" })
+    .click();
   await settingsRoot.getByRole("tab", { name: "主题市场" }).click();
   if ((await settingsRoot.locator(".mypage-theme-card").count()) < 4) {
     throw new Error("Official theme market did not expose the preset themes.");
@@ -640,22 +682,28 @@ try {
   await settingsRoot
     .locator(".mypage-theme-card")
     .first()
-    .getByRole("button", { name: "详情" })
     .click();
-  const themeMarketDetail = page.locator(".mypage-market-details-modal");
-  await themeMarketDetail.locator(".modal-title").waitFor({ state: "visible" });
+  const themeMarketDetail = settingsRoot.locator(
+    ".mypage-market-inline-detail",
+  );
+  await themeMarketDetail.locator("h2").waitFor({ state: "visible" });
   await themeMarketDetail
     .getByRole("button", { name: /安装主题|应用主题/ })
     .first()
     .waitFor({ state: "visible" });
+  if ((await page.locator(".mypage-market-details-modal").count()) !== 0) {
+    throw new Error("Theme market still opened details in a dialog.");
+  }
   await page.screenshot({
     path: path.join(artifacts, "testdev-theme-market.png"),
     fullPage: true,
   });
   evidence.assertions.push(
-    "Official theme market exposes multiple presets with dialog details and install actions",
+    "Official theme market exposes multiple presets and renders actions/README inside the settings page",
   );
-  await themeMarketDetail.locator(".modal-close-button").click();
+  await themeMarketDetail
+    .getByRole("button", { name: "返回市场目录" })
+    .click();
   await settingsRoot.getByRole("tab", { name: "模块管理" }).click();
   const hexoManagement = settingsRoot
     .locator(".mypage-module-management-card")
@@ -942,7 +990,9 @@ async function waitForEndpoint(url, timeoutMs) {
   let lastError;
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`${url}/json/version`);
+      const response = await fetch(`${url}/json/version`, {
+        signal: AbortSignal.timeout(1_000),
+      });
       if (response.ok) return;
       lastError = new Error(`HTTP ${response.status}`);
     } catch (error) {

@@ -419,21 +419,23 @@ export function DashboardShell({
         ) : null}
       </div>
       <div class="mypage-widget-body">
-        <WidgetHost
-          app={app}
-          actions={actions}
-          dataEngine={dataEngine}
-          widget={widget}
-          editing={session !== null}
-          moduleRuntime={moduleRuntime}
-          theme={themeService.sandboxTokens(
-            settings,
-            dashboard!,
-            widget.appearance,
-          )}
-          safeMode={settings.general.safeMode}
-          runtimeVersion={moduleRegistryVersion}
-        />
+        <div class="mypage-widget-scale">
+          <WidgetHost
+            app={app}
+            actions={actions}
+            dataEngine={dataEngine}
+            widget={widget}
+            editing={session !== null}
+            moduleRuntime={moduleRuntime}
+            theme={themeService.sandboxTokens(
+              settings,
+              dashboard!,
+              widget.appearance,
+            )}
+            safeMode={settings.general.safeMode}
+            runtimeVersion={moduleRegistryVersion}
+          />
+        </div>
       </div>
       {session ? (
         <>

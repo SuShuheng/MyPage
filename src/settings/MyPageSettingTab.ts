@@ -1,5 +1,6 @@
 import manifestJson from "../../manifest.json";
 import {
+  Component,
   Notice,
   normalizePath,
   PluginSettingTab,
@@ -22,7 +23,12 @@ import type {
   MarketModule,
   ModuleUpdateStatus,
 } from "../marketplace/market-types";
-import { MarketDetailsModal, type MarketDetailAction } from "./MarketDetailsModal";
+import {
+  MarketDetailsModal,
+  renderMarketDetailContent,
+  type MarketDetailAction,
+  type MarketDetailOptions,
+} from "./MarketDetailsModal";
 
 export type SettingsTabId =
   | "general"
@@ -60,6 +66,7 @@ export class MyPageSettingTab extends PluginSettingTab {
   private selectedThemeId = "";
   private themeSearch = "";
   private themeLoading = false;
+  private inlineMarketComponent: Component | undefined;
 
   public constructor(
     app: App,
@@ -74,6 +81,7 @@ export class MyPageSettingTab extends PluginSettingTab {
   }
 
   public override display(): void {
+    this.disposeInlineMarketComponent();
     const { containerEl } = this;
     containerEl.empty();
     containerEl.addClass("mypage-settings");
@@ -112,6 +120,11 @@ export class MyPageSettingTab extends PluginSettingTab {
         this.renderBackup(panel);
         break;
     }
+  }
+
+  public override hide(): void {
+    this.disposeInlineMarketComponent();
+    super.hide();
   }
 
   public override update(): void;
@@ -643,7 +656,23 @@ export class MyPageSettingTab extends PluginSettingTab {
       "主题市场",
       "官方主题来自 MyPage 内置可信目录；第三方主题市场仅在用户手动检测时访问。",
     );
-    const toolbar = container.createDiv("mypage-market-toolbar");
+    const themes =
+      this.themeSourceId === "official"
+        ? this.myPagePlugin.themeMarketplace.officialThemes()
+        : this.myPagePlugin.themeMarketplace.getCached(this.themeSourceId)?.themes ?? [];
+    const selectedTheme = themes.find((theme) => theme.id === this.selectedThemeId);
+    const browser = container.createDiv({
+      cls: `mypage-market-browser${selectedTheme ? " is-detail" : ""}`,
+    });
+    const catalog = selectedTheme
+      ? browser.createEl("aside", {
+          cls: "mypage-market-sidebar",
+          attr: { "aria-label": "主题列表" },
+        })
+      : browser.createDiv("mypage-market-catalog");
+    const toolbar = catalog.createDiv({
+      cls: `mypage-market-toolbar${selectedTheme ? " is-sidebar" : ""}`,
+    });
     const source = toolbar.createEl("select", {
       attr: { "aria-label": "主题市场来源" },
     });
@@ -678,72 +707,64 @@ export class MyPageSettingTab extends PluginSettingTab {
       check.disabled = this.themeLoading;
       check.addEventListener("click", () => void this.refreshThemeMarket());
     }
-    new Setting(container)
-      .setName("添加第三方主题市场")
-      .setDesc("输入公开 GitHub owner/repo；仓库必须包含 .mypage-theme-market/index.json。")
-      .addText((text) => {
-        text.setPlaceholder("owner/repo");
-        text.inputEl.addClass("mypage-theme-repo-input");
-        text.inputEl.title = "示例：owner/repository。第三方市场不会主动联网检查。";
-      })
-      .addButton((button) =>
-        button.setButtonText("添加并检测").onClick(async () => {
-          const input = container.querySelector<HTMLInputElement>(
-            ".mypage-theme-repo-input",
-          );
-          if (!input?.value.trim()) {
-            new Notice("请输入 GitHub owner/repo。");
-            return;
-          }
-          try {
-            this.themeLoading = true;
-            this.themeSourceId =
-              await this.myPagePlugin.themeMarketplace.addThirdParty(
-                input.value,
-              );
-            this.display();
-          } catch (error) {
-            new Notice(error instanceof Error ? error.message : String(error), 10_000);
-          } finally {
-            this.themeLoading = false;
-          }
-        }),
-      );
-    const themes =
-      this.themeSourceId === "official"
-        ? this.myPagePlugin.themeMarketplace.officialThemes()
-        : this.myPagePlugin.themeMarketplace.getCached(this.themeSourceId)?.themes ?? [];
+    if (!selectedTheme) {
+      new Setting(catalog)
+        .setName("添加第三方主题市场")
+        .setDesc("输入公开 GitHub owner/repo；仓库必须包含 .mypage-theme-market/index.json。")
+        .addText((text) => {
+          text.setPlaceholder("owner/repo");
+          text.inputEl.addClass("mypage-theme-repo-input");
+          text.inputEl.title = "示例：owner/repository。第三方市场不会主动联网检查。";
+        })
+        .addButton((button) =>
+          button.setButtonText("添加并检测").onClick(async () => {
+            const input = container.querySelector<HTMLInputElement>(
+              ".mypage-theme-repo-input",
+            );
+            if (!input?.value.trim()) {
+              new Notice("请输入 GitHub owner/repo。");
+              return;
+            }
+            try {
+              this.themeLoading = true;
+              this.themeSourceId =
+                await this.myPagePlugin.themeMarketplace.addThirdParty(
+                  input.value,
+                );
+              this.display();
+            } catch (error) {
+              new Notice(error instanceof Error ? error.message : String(error), 10_000);
+            } finally {
+              this.themeLoading = false;
+            }
+          }),
+        );
+    }
     const query = this.themeSearch.trim().toLocaleLowerCase();
     const filtered = themes.filter((theme) =>
       !query ||
       [theme.name, theme.description, theme.author]
         .some((value) => value?.toLocaleLowerCase().includes(query)),
     );
-    const grid = container.createDiv("mypage-theme-grid");
-    for (const theme of filtered) {
-      const installed =
-        this.myPagePlugin.settingsStore.snapshot.themeProfiles[theme.id];
-      const card = grid.createDiv("mypage-theme-card");
-      const preview = card.createDiv("mypage-theme-preview");
-      preview.style.background =
-        theme.preview ?? String(theme.tokens.background ?? "var(--background-secondary)");
-      card.createEl("strong", { text: theme.name });
-      card.createEl("span", { text: theme.description ?? "MyPage 主题" });
-      card.createEl("small", {
-        text: `${theme.author ?? "未知作者"} · ${theme.version ?? "1.0.0"}`,
-      });
-      if (installed) card.createSpan({ text: "已安装", cls: "mypage-installed-badge" });
-      const details = card.createEl("button", {
-        text: "详情",
-        cls: "mypage-card-detail-button",
-        attr: { type: "button" },
-      });
-      details.addEventListener("click", () => {
-        this.openThemeDetails(theme);
-      });
-    }
+    const list = catalog.createDiv(
+      selectedTheme ? "mypage-market-sidebar-list" : "mypage-theme-grid",
+    );
+    this.renderThemeCards(list, filtered, Boolean(selectedTheme));
     if (filtered.length === 0) {
-      grid.createEl("p", { text: "没有符合筛选条件的主题。", cls: "mypage-market-empty" });
+      list.createEl("p", { text: "没有符合筛选条件的主题。", cls: "mypage-market-empty" });
+    }
+    if (selectedTheme) {
+      const detail = browser.createEl("main", {
+        cls: "mypage-market-inline-detail",
+        attr: { "aria-label": `${selectedTheme.name}主题详情` },
+      });
+      this.renderInlineMarketDetail(
+        detail,
+        this.createThemeDetailOptions(selectedTheme),
+        () => {
+          this.selectedThemeId = "";
+        },
+      );
     }
   }
 
@@ -758,6 +779,10 @@ export class MyPageSettingTab extends PluginSettingTab {
       this.marketSourceId = sources[0]?.id ?? "official";
     }
     const source = sources.find((item) => item.id === this.marketSourceId);
+    const index = this.myPagePlugin.marketplace.getCached(this.marketSourceId);
+    const selectedModule = index?.modules.find(
+      (module) => module.id === this.selectedModuleId,
+    );
     if (
       source?.type === "official" &&
       !this.officialMarketCheckStarted &&
@@ -766,7 +791,18 @@ export class MyPageSettingTab extends PluginSettingTab {
       this.officialMarketCheckStarted = true;
       queueMicrotask(() => void this.refreshModuleMarket());
     }
-    const toolbar = container.createDiv("mypage-market-toolbar");
+    const browser = container.createDiv({
+      cls: `mypage-market-browser${selectedModule ? " is-detail" : ""}`,
+    });
+    const catalog = selectedModule
+      ? browser.createEl("aside", {
+          cls: "mypage-market-sidebar",
+          attr: { "aria-label": "模块列表" },
+        })
+      : browser.createDiv("mypage-market-catalog");
+    const toolbar = catalog.createDiv({
+      cls: `mypage-market-toolbar${selectedModule ? " is-sidebar" : ""}`,
+    });
     const sourceSelect = toolbar.createEl("select", {
       attr: { "aria-label": "模块市场来源" },
     });
@@ -848,50 +884,67 @@ export class MyPageSettingTab extends PluginSettingTab {
     check.disabled = this.marketLoading;
     check.addEventListener("click", () => void this.refreshModuleMarket());
 
-    new Setting(container)
-      .setName("添加第三方模块市场")
-      .setDesc("输入公开 GitHub owner/repo；第三方市场不会主动检查更新。")
-      .addText((text) => {
-        text.setPlaceholder("owner/repo");
-        text.inputEl.addClass("mypage-module-repo-input");
-      })
-      .addButton((button) =>
-        button.setButtonText("添加并检测").onClick(async () => {
-          const input = container.querySelector<HTMLInputElement>(
-            ".mypage-module-repo-input",
-          );
-          if (!input?.value.trim()) {
-            new Notice("请输入 GitHub owner/repo。");
-            return;
-          }
-          try {
-            this.marketLoading = true;
-            this.marketSourceId =
-              await this.myPagePlugin.marketplace.addThirdParty(input.value);
-            this.display();
-          } catch (error) {
-            new Notice(error instanceof Error ? error.message : String(error), 10_000);
-          } finally {
-            this.marketLoading = false;
-          }
-        }),
-      );
+    if (!selectedModule) {
+      new Setting(catalog)
+        .setName("添加第三方模块市场")
+        .setDesc("输入公开 GitHub owner/repo；第三方市场不会主动检查更新。")
+        .addText((text) => {
+          text.setPlaceholder("owner/repo");
+          text.inputEl.addClass("mypage-module-repo-input");
+        })
+        .addButton((button) =>
+          button.setButtonText("添加并检测").onClick(async () => {
+            const input = container.querySelector<HTMLInputElement>(
+              ".mypage-module-repo-input",
+            );
+            if (!input?.value.trim()) {
+              new Notice("请输入 GitHub owner/repo。");
+              return;
+            }
+            try {
+              this.marketLoading = true;
+              this.marketSourceId =
+                await this.myPagePlugin.marketplace.addThirdParty(input.value);
+              this.display();
+            } catch (error) {
+              new Notice(error instanceof Error ? error.message : String(error), 10_000);
+            } finally {
+              this.marketLoading = false;
+            }
+          }),
+        );
+    }
     if (this.marketMessage) {
-      container.createDiv({
+      catalog.createDiv({
         text: this.marketMessage,
         cls: "mypage-market-status",
         attr: { role: "status", "aria-live": "polite" },
       });
     }
-    const index = this.myPagePlugin.marketplace.getCached(this.marketSourceId);
     if (!index) {
-      container.createEl("p", {
+      catalog.createEl("p", {
         text: "此市场尚无缓存索引，请点击检测。",
         cls: "mypage-market-empty",
       });
       return;
     }
-    this.renderModuleIndex(container, index);
+    this.renderModuleIndex(catalog, index, Boolean(selectedModule));
+    if (selectedModule) {
+      const status = this.myPagePlugin.marketplace
+        .updateStatuses(index)
+        .find((item) => item.moduleId === selectedModule.id);
+      const detail = browser.createEl("main", {
+        cls: "mypage-market-inline-detail",
+        attr: { "aria-label": `${selectedModule.name}模块详情` },
+      });
+      this.renderInlineMarketDetail(
+        detail,
+        this.createModuleDetailOptions(selectedModule, status),
+        () => {
+          this.selectedModuleId = "";
+        },
+      );
+    }
   }
 
   private renderModuleManagement(container: HTMLElement): void {
@@ -991,7 +1044,7 @@ export class MyPageSettingTab extends PluginSettingTab {
                 .updateStatuses(index)
                 .find((item) => item.moduleId === module.id)
             : undefined;
-          this.openModuleDetails(marketModule, status);
+          this.openModuleDetailsDialog(marketModule, status);
           return;
         }
         const installed = this.myPagePlugin.moduleManager.registry.get(module.id);
@@ -1131,7 +1184,48 @@ export class MyPageSettingTab extends PluginSettingTab {
       );
   }
 
-  private renderModuleIndex(container: HTMLElement, index: MarketIndex): void {
+  private renderThemeCards(
+    container: HTMLElement,
+    themes: ThemeProfile[],
+    compact: boolean,
+  ): void {
+    for (const theme of themes) {
+      const installed =
+        this.myPagePlugin.settingsStore.snapshot.themeProfiles[theme.id];
+      const card = container.createDiv({
+        cls: `mypage-theme-card${compact ? " is-compact" : ""}${
+          this.selectedThemeId === theme.id ? " is-selected" : ""
+        }`,
+        attr: {
+          role: "button",
+          tabindex: "0",
+          "aria-label": `查看主题详情：${theme.name}`,
+        },
+      });
+      bindCardActivation(card, () => {
+        this.selectedThemeId = theme.id;
+        this.display();
+      });
+      const preview = card.createDiv("mypage-theme-preview");
+      preview.style.background =
+        theme.preview ?? String(theme.tokens.background ?? "var(--background-secondary)");
+      const title = card.createDiv("mypage-market-card-title");
+      title.createEl("strong", { text: theme.name });
+      if (installed) {
+        title.createSpan({ text: "已安装", cls: "mypage-installed-badge" });
+      }
+      card.createEl("span", { text: theme.description ?? "MyPage 主题" });
+      card.createEl("small", {
+        text: `${theme.author ?? "未知作者"} · ${theme.version ?? "1.0.0"}`,
+      });
+    }
+  }
+
+  private renderModuleIndex(
+    container: HTMLElement,
+    index: MarketIndex,
+    compact = false,
+  ): void {
     const statuses = new Map(
       this.myPagePlugin.marketplace
         .updateStatuses(index)
@@ -1159,14 +1253,33 @@ export class MyPageSettingTab extends PluginSettingTab {
         (module.categories ?? []).includes(this.marketType);
       return matchesSearch && matchesStatus && matchesPlatform && matchesType;
     });
-    const grid = container.createDiv("mypage-module-market-grid");
+    const grid = container.createDiv(
+      compact ? "mypage-market-sidebar-list" : "mypage-module-market-grid",
+    );
     for (const module of filtered) {
       const status = statuses.get(module.id);
-      const card = grid.createDiv("mypage-module-market-card");
+      const card = grid.createDiv({
+        cls: `mypage-module-market-card${compact ? " is-compact" : ""}${
+          this.selectedModuleId === module.id ? " is-selected" : ""
+        }`,
+        attr: {
+          role: "button",
+          tabindex: "0",
+          "aria-label": `查看模块详情：${module.name}`,
+        },
+      });
+      bindCardActivation(card, () => {
+        this.selectedModuleId = module.id;
+        this.display();
+      });
       const icon = card.createDiv("mypage-market-module-icon");
       setIcon(icon, module.id === "hexo-insights" ? "milestone" : "blocks");
       const copy = card.createDiv();
-      copy.createEl("strong", { text: module.name });
+      const title = copy.createDiv("mypage-market-card-title");
+      title.createEl("strong", { text: module.name });
+      if (status?.installedVersion) {
+        title.createSpan({ text: "已安装", cls: "mypage-installed-badge" });
+      }
       copy.createEl("p", { text: module.description });
       copy.createEl("small", {
         text: `${module.author} · ${
@@ -1177,27 +1290,16 @@ export class MyPageSettingTab extends PluginSettingTab {
               : `最新 ${status?.latestVersion?.version ?? "未知"}`
         }`,
       });
-      if (status?.installedVersion) {
-        copy.createSpan({ text: "已安装", cls: "mypage-installed-badge" });
-      }
-      const detail = card.createEl("button", {
-        text: "详情",
-        cls: "mypage-card-detail-button",
-        attr: { type: "button" },
-      });
-      detail.addEventListener("click", () => {
-        this.openModuleDetails(module, status);
-      });
     }
     if (filtered.length === 0) {
       grid.createEl("p", { text: "没有符合筛选条件的模块。", cls: "mypage-market-empty" });
     }
   }
 
-  private openModuleDetails(
+  private createModuleDetailOptions(
     module: MarketModule,
     status: ModuleUpdateStatus | undefined,
-  ): void {
+  ): MarketDetailOptions {
     const actions: MarketDetailAction[] = [];
     if (!status?.installedVersion) {
       actions.push({
@@ -1224,7 +1326,7 @@ export class MyPageSettingTab extends PluginSettingTab {
       });
     }
     const latest = status?.latestVersion;
-    new MarketDetailsModal(this.app, {
+    return {
       title: module.name,
       description: module.description,
       installed: Boolean(status?.installedVersion),
@@ -1243,10 +1345,20 @@ export class MyPageSettingTab extends PluginSettingTab {
       ],
       readme: this.readInstalledModuleReadme(module.id),
       actions,
-    }).open();
+    };
   }
 
-  private openThemeDetails(theme: ThemeProfile): void {
+  private openModuleDetailsDialog(
+    module: MarketModule,
+    status: ModuleUpdateStatus | undefined,
+  ): void {
+    new MarketDetailsModal(
+      this.app,
+      this.createModuleDetailOptions(module, status),
+    ).open();
+  }
+
+  private createThemeDetailOptions(theme: ThemeProfile): MarketDetailOptions {
     const installed =
       this.myPagePlugin.settingsStore.snapshot.themeProfiles[theme.id];
     const actions: MarketDetailAction[] = installed
@@ -1286,7 +1398,7 @@ export class MyPageSettingTab extends PluginSettingTab {
           },
         ];
     const palette = theme.tokens.palette?.join(" · ") ?? "跟随主题";
-    new MarketDetailsModal(this.app, {
+    return {
       title: theme.name,
       description: theme.description ?? "MyPage 主题",
       installed: Boolean(installed),
@@ -1300,7 +1412,46 @@ export class MyPageSettingTab extends PluginSettingTab {
       ],
       readme: `# ${theme.name}\n\n${theme.description ?? "MyPage 主题"}\n\n该主题会实时适配 Obsidian 的浅色与深色基础颜色，同时以自己的强调色和数据调色板覆盖组件视觉。`,
       actions,
-    }).open();
+    };
+  }
+
+  private renderInlineMarketDetail(
+    container: HTMLElement,
+    options: MarketDetailOptions,
+    resetSelection: () => void,
+  ): void {
+    const navigation = container.createDiv("mypage-market-inline-nav");
+    const back = navigation.createEl("button", {
+      cls: "mypage-market-back-button",
+      attr: { type: "button", "aria-label": "返回市场目录" },
+    });
+    const icon = back.createSpan();
+    setIcon(icon, "arrow-left");
+    back.createSpan({ text: "返回市场目录" });
+    back.addEventListener("click", () => {
+      resetSelection();
+      this.display();
+    });
+    const heading = container.createDiv("mypage-market-inline-heading");
+    heading.createEl("h2", { text: options.title });
+    const component = new Component();
+    component.load();
+    this.inlineMarketComponent = component;
+    renderMarketDetailContent(
+      this.app,
+      container,
+      options,
+      component,
+      {
+        actionsBeforeReadme: true,
+        onActionComplete: () => this.display(),
+      },
+    );
+  }
+
+  private disposeInlineMarketComponent(): void {
+    this.inlineMarketComponent?.unload();
+    this.inlineMarketComponent = undefined;
   }
 
   private async readInstalledModuleReadme(
@@ -1311,108 +1462,6 @@ export class MyPageSettingTab extends PluginSettingTab {
     const path = normalizePath(`${installed.directory}/README.md`);
     if (!(await this.app.vault.adapter.exists(path))) return undefined;
     return this.app.vault.adapter.read(path);
-  }
-
-  private renderModuleDetails(
-    container: HTMLElement,
-    module: MarketModule,
-    status: ModuleUpdateStatus | undefined,
-  ): void {
-    container.createEl("h3", { text: module.name });
-    container.createEl("p", { text: module.description });
-    const meta = container.createDiv("mypage-market-detail-meta");
-    meta.createEl("span", { text: `作者：${module.author}` });
-    meta.createEl("span", { text: `许可证：${module.license}` });
-    meta.createEl("span", { text: `仓库：${module.repository}` });
-    meta.createEl("span", {
-      text: `类型：${(module.categories ?? ["其他"]).join(" / ")}`,
-    });
-    const latest = status?.latestVersion;
-    if (latest) {
-      meta.createEl("span", {
-        text: `平台：${latest.platforms.join(" / ")}`,
-      });
-      if (latest.permissions.length > 0) {
-        container.createEl("h4", { text: "声明能力" });
-        const permissions = container.createEl("ul");
-        for (const permission of latest.permissions) {
-          permissions.createEl("li", { text: permission.capability });
-        }
-      }
-    }
-    const actions = container.createDiv("mypage-market-detail-actions");
-    if (!status?.installedVersion) {
-      button(actions, "安装", () => void this.installMarketModule(module.id), false, true);
-      return;
-    }
-    if (status.updateAvailable) {
-      button(actions, "更新", () => void this.installMarketModule(module.id), false, true);
-    }
-    button(
-      actions,
-      "删除",
-      () => {
-        const installed = this.myPagePlugin.settingsStore.snapshot.modules[module.id];
-        if (installed) void this.uninstallModule(installed);
-      },
-      true,
-    );
-  }
-
-  private renderThemeDetails(container: HTMLElement, theme: ThemeProfile): void {
-    container.createEl("h3", { text: theme.name });
-    container.createEl("p", { text: theme.description ?? "MyPage 主题" });
-    const meta = container.createDiv("mypage-market-detail-meta");
-    meta.createEl("span", { text: `作者：${theme.author ?? "未知"}` });
-    meta.createEl("span", { text: `版本：${theme.version ?? "1.0.0"}` });
-    meta.createEl("span", { text: `模式：${theme.mode}` });
-    meta.createEl("span", {
-      text: `字体：${theme.fontFamily ?? "跟随 Obsidian"}`,
-    });
-    const palette = container.createDiv("mypage-theme-palette");
-    for (const color of theme.tokens.palette ?? []) {
-      const swatch = palette.createSpan({
-        attr: { title: color, "aria-label": color },
-      });
-      swatch.style.background = color;
-    }
-    const installed =
-      this.myPagePlugin.settingsStore.snapshot.themeProfiles[theme.id];
-    const actions = container.createDiv("mypage-market-detail-actions");
-    if (!installed) {
-      button(actions, "安装主题", async () => {
-        await this.myPagePlugin.themeMarketplace.install(
-          theme,
-          this.themeSourceId,
-        );
-        new Notice(`主题“${theme.name}”已安装。`);
-        this.display();
-      }, false, true);
-    } else {
-      button(actions, "应用主题", async () => {
-        await this.update((draft) => {
-          for (const dashboard of Object.values(draft.dashboards)) {
-            dashboard.themeProfileId = theme.id;
-            if (typeof theme.tokens.gap === "number") {
-              dashboard.gridOptions.gap = theme.tokens.gap;
-            }
-          }
-        });
-        new Notice(`已应用主题“${theme.name}”。`);
-        this.activeTab = "appearance";
-        this.display();
-      }, false, true);
-      button(actions, "卸载", async () => {
-        try {
-          await this.myPagePlugin.themeMarketplace.uninstall(theme.id);
-          new Notice(`主题“${theme.name}”已卸载。`);
-          this.selectedThemeId = "";
-          this.display();
-        } catch (error) {
-          new Notice(error instanceof Error ? error.message : String(error));
-        }
-      }, true);
-    }
   }
 
   private async refreshModuleMarket(): Promise<void> {
@@ -1605,6 +1654,18 @@ function button(
   });
   element.addEventListener("click", () => void onClick());
   return element;
+}
+
+function bindCardActivation(
+  card: HTMLElement,
+  activate: () => void,
+): void {
+  card.addEventListener("click", activate);
+  card.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    activate();
+  });
 }
 
 function fact(container: HTMLElement, label: string, value: string): void {
