@@ -7,6 +7,7 @@ import {
 import type { DataBinding } from "../persistence/settings-types";
 import { BaseConfigParser } from "./BaseConfigParser";
 import { BasesAdapter } from "./BasesAdapter";
+import { promptDialog } from "../components/ThemeDialog";
 
 export class BasesBindingModal extends FuzzySuggestModal<TFile> {
   public constructor(
@@ -37,7 +38,14 @@ export class BasesBindingModal extends FuzzySuggestModal<TFile> {
       const viewName =
         names.length === 1
           ? names[0]
-          : window.prompt(`输入 Bases 视图名称：\n${names.join("\n")}`, names[0]);
+          : await promptDialog(this.app, {
+              title: "选择 Bases 视图",
+              message: `可用视图：${names.join("、")}`,
+              value: names[0] ?? "",
+              confirmText: "导入视图",
+              validate: (value) =>
+                names.includes(value) ? undefined : "找不到这个 Bases 视图。",
+            });
       if (!viewName) return;
       const result = await new BasesAdapter(this.app).translate(file, viewName);
       if (!result.binding || !result.report.supported) {

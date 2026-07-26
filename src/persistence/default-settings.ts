@@ -120,7 +120,7 @@ export function createDefaultSettings(): MyPageSettings {
       endDate: heatmapRange.endDate,
     }),
     createWidget("widget-tasks", "tasks", "待办任务", 9, 0, 3, 3, {
-      showCompleted: false,
+      showCompleted: true,
       taskPath: "MyPage/TODO.md",
     }),
     createWidget("widget-trend", "trend", "写作趋势", 0, 3, 6, 4),
@@ -192,6 +192,7 @@ export function createDefaultSettings(): MyPageSettings {
         enabled: true,
       },
     },
+    themeMarkets: {},
     themeProfiles: {
       "theme-default": {
         id: "theme-default",

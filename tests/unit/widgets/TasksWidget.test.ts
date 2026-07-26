@@ -54,4 +54,68 @@ describe("TasksWidget", () => {
       }),
     );
   });
+
+  it("keeps completed tasks visible at the bottom with a completion time", async () => {
+    const records = [
+      {
+        id: "completed",
+        sourceId: "core.tasks",
+        type: "task",
+        fields: {
+          path: "TODO.md",
+          line: 0,
+          text: "已完成事项",
+          completed: true,
+          completedAt: "2026-07-26T10:00:00.000Z",
+          modified: 2,
+        },
+      },
+      {
+        id: "open",
+        sourceId: "core.tasks",
+        type: "task",
+        fields: {
+          path: "TODO.md",
+          line: 1,
+          text: "未完成事项",
+          completed: false,
+          modified: 1,
+        },
+      },
+    ];
+    const dataEngine = {
+      subscribe: vi.fn(
+        (_binding: unknown, listener: (result: QueryResult) => void) => {
+          listener({
+            records,
+            fingerprint: "tasks",
+            computedAt: 1,
+            durationMs: 1,
+            cacheHit: false,
+          });
+          return vi.fn();
+        },
+      ),
+    };
+    const widget = createDefaultSettings().widgetInstances["widget-tasks"]!;
+    const view = render(
+      h(TasksWidget, {
+        app: {} as never,
+        actions: { execute: vi.fn() } as never,
+        dataEngine: dataEngine as never,
+        widget,
+        binding: structuredClone(DEFAULT_DATA_BINDING),
+        editing: false,
+      }),
+    );
+
+    await view.findByText("已完成事项");
+    const labels = [...view.container.querySelectorAll(".mypage-tasks-list label")];
+    expect(labels.map((label) => label.textContent)).toEqual([
+      expect.stringContaining("未完成事项"),
+      expect.stringContaining("已完成事项"),
+    ]);
+    expect(labels[1]?.textContent).toContain("完成于");
+    expect(labels[1]?.textContent).toContain("右键可清除");
+  });
 });

@@ -37,6 +37,7 @@ export interface MarketModule {
   license: string;
   path: string;
   repository: string;
+  categories?: string[];
   versions: MarketModuleVersion[];
 }
 

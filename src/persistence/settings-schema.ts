@@ -348,6 +348,7 @@ const settingsSchema = {
       },
     },
     markets: { type: "object" },
+    themeMarkets: { type: "object" },
     themeProfiles: { type: "object" },
     uiState: {
       type: "object",

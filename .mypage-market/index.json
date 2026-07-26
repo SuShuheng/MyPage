@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-25T16:30:25.783Z",
+  "generatedAt": "2026-07-26T04:07:16.158Z",
   "repository": "SuShuHeng/MyPage",
   "modules": [
     {
@@ -11,12 +11,16 @@
       "license": "Apache-2.0",
       "path": "diy-plugins/hello-widget",
       "repository": "SuShuHeng/MyPage",
+      "categories": [
+        "visualization",
+        "templates"
+      ],
       "versions": [
         {
           "version": "1.0.0",
           "releaseTag": "1.0.0",
           "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/hello-widget_1.0.0.zip",
-          "sha256": "6bd10713e228c91aad622e995be51be33b0421162c7e4e1bd1ece9e1ac2eaa52",
+          "sha256": "07f1dd2ca34654f242ae679577120833fbcf230b0fb589f30cf9bfe286a8c2fb",
           "minMyPageVersion": "1.0.0",
           "platforms": [
             "desktop",
@@ -35,12 +39,19 @@
       "license": "Apache-2.0",
       "path": "diy-plugins/hexo-insights",
       "repository": "SuShuHeng/MyPage",
+      "categories": [
+        "visualization",
+        "data",
+        "actions",
+        "templates",
+        "settings"
+      ],
       "versions": [
         {
           "version": "1.0.0",
           "releaseTag": "1.0.0",
           "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/hexo-insights_1.0.0.zip",
-          "sha256": "9c6af4023490bac1badcf1ae8e60d060fb9dbaa70e0b04bee6172eaf0a4ef5b9",
+          "sha256": "abf1dbf463cf811cf07bc5d3c9f2024ca3f4be4dd3c2e174663ceb1330636a41",
           "minMyPageVersion": "1.0.0",
           "platforms": [
             "desktop"

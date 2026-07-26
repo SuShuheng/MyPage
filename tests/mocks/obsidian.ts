@@ -7,6 +7,7 @@ export class Component {
 }
 export class ItemView {}
 export class Notice {}
+export class Modal {}
 export class Plugin {}
 export class PluginSettingTab {}
 export class Setting {}

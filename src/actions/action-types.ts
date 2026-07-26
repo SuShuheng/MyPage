@@ -16,6 +16,10 @@ export type BuiltInAction =
       input: { path: string; text: string };
     }
   | {
+      id: "delete-task";
+      input: { path: string; line: number; expectedText?: string };
+    }
+  | {
       id: "update-frontmatter";
       input: { path: string; field: string; value: unknown };
     };

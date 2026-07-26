@@ -57,7 +57,10 @@ export class ModuleRuntime {
       styles,
       container,
       broker: this.broker,
-      config,
+      config: {
+        ...(this.settings.snapshot.moduleSettings[moduleId] ?? {}),
+        ...config,
+      },
       theme,
       onReady: () => {
         window.clearTimeout(timeout);

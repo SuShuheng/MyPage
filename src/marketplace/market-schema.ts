@@ -45,6 +45,11 @@ export const marketIndexSchema = {
           license: { type: "string" },
           path: { type: "string" },
           repository: { type: "string" },
+          categories: {
+            type: "array",
+            uniqueItems: true,
+            items: { type: "string" },
+          },
           versions: {
             type: "array",
             minItems: 1,

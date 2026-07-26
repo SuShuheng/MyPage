@@ -1,4 +1,4 @@
-import type { WorkspaceLeaf } from "obsidian";
+import type { App, WorkspaceLeaf } from "obsidian";
 import { Notice, Plugin } from "obsidian";
 import {
   MY_PAGE_ICON,
@@ -22,7 +22,6 @@ import { GithubReleaseClient } from "../updater/GithubReleaseClient";
 import { UpdateInstaller } from "../updater/UpdateInstaller";
 import { UpdateService } from "../updater/UpdateService";
 import { showUpdateNotice } from "../updater/UpdateNotice";
-import { MarketplaceModal } from "../marketplace/MarketplaceModal";
 import { BlueprintExporter } from "../blueprint/BlueprintExporter";
 import { BlueprintImporter } from "../blueprint/BlueprintImporter";
 import { BlueprintFileSuggestModal } from "../blueprint/BlueprintModals";
@@ -31,6 +30,14 @@ import { normalizePath } from "obsidian";
 import { SecretReferenceService } from "../persistence/SecretReferenceService";
 import { PerformanceMonitor } from "../diagnostics/PerformanceMonitor";
 import { DiagnosticsService } from "../diagnostics/DiagnosticsService";
+import { ThemeMarketplaceService } from "../theme/ThemeMarketplaceService";
+
+interface AppWithSettings extends App {
+  setting?: {
+    open(): void;
+    openTabById(id: string): void;
+  };
+}
 
 export default class MyPagePlugin extends Plugin {
   public settingsStore!: SettingsStore;
@@ -50,6 +57,8 @@ export default class MyPagePlugin extends Plugin {
   public secrets!: SecretReferenceService;
   public performanceMonitor!: PerformanceMonitor;
   public diagnostics!: DiagnosticsService;
+  public themeMarketplace!: ThemeMarketplaceService;
+  private settingTab!: MyPageSettingTab;
 
   public override async onload(): Promise<void> {
     this.settingsStore = new SettingsStore(this);
@@ -122,6 +131,10 @@ export default class MyPagePlugin extends Plugin {
     this.blueprintExporter = new BlueprintExporter(this.settingsStore);
     this.blueprintImporter = new BlueprintImporter(this.settingsStore);
     this.themeService = new ThemeService();
+    this.themeMarketplace = new ThemeMarketplaceService(
+      this.settingsStore,
+      this.workers,
+    );
     this.secrets = new SecretReferenceService(this.app);
     this.performanceMonitor = new PerformanceMonitor();
     this.performanceMonitor.start();
@@ -178,11 +191,7 @@ export default class MyPagePlugin extends Plugin {
       id: "open-mypage-marketplace",
       name: "打开模块市场",
       callback: () => {
-        new MarketplaceModal(
-          this.app,
-          this.marketplace,
-          this.moduleManager,
-        ).open();
+        this.openMarketplace();
       },
     });
 
@@ -223,7 +232,8 @@ export default class MyPagePlugin extends Plugin {
       },
     });
 
-    this.addSettingTab(new MyPageSettingTab(this.app, this));
+    this.settingTab = new MyPageSettingTab(this.app, this);
+    this.addSettingTab(this.settingTab);
 
     this.app.workspace.onLayoutReady(() => {
       void this.handleWorkspaceReady();
@@ -298,11 +308,10 @@ export default class MyPagePlugin extends Plugin {
   }
 
   public openMarketplace(): void {
-    new MarketplaceModal(
-      this.app,
-      this.marketplace,
-      this.moduleManager,
-    ).open();
+    this.settingTab.show("module-market");
+    const settingsApi = (this.app as AppWithSettings).setting;
+    settingsApi?.open();
+    settingsApi?.openTabById(this.manifest.id);
   }
 
   public pickModuleArchive(): void {
@@ -332,7 +341,7 @@ export default class MyPagePlugin extends Plugin {
     try {
       const update = await this.updateService.check(manual);
       if (update) {
-        showUpdateNotice(update, this.updateService);
+        showUpdateNotice(this.app, update, this.updateService);
       } else if (manual) {
         new Notice("MyPage 已是当前通道的最新版本。");
       }

@@ -28,6 +28,7 @@ import type { ModuleRuntime } from "../modules/ModuleRuntime";
 import type { ThemeService } from "../theme/ThemeService";
 import type { ModuleManager } from "../modules/ModuleManager";
 import { WidgetConfigurationModal } from "./WidgetConfigurationModal";
+import { confirmDialog, promptDialog } from "../components/ThemeDialog";
 
 interface DashboardShellProps {
   settingsStore: SettingsStore;
@@ -175,9 +176,15 @@ export function DashboardShell({
     setGalleryOpen(false);
   };
 
-  const addGroup = () => {
+  const addGroup = async () => {
     if (!session) return;
-    const title = window.prompt("分组名称", "新分组");
+    const title = await promptDialog(app, {
+      title: "添加分组",
+      message: "为新的主页分组输入一个便于识别的名称。",
+      value: "新分组",
+      confirmText: "添加分组",
+      validate: (value) => value ? undefined : "分组名称不能为空。",
+    });
     if (!title) return;
     session.addGroup(title);
     rerenderDraft();
@@ -217,8 +224,15 @@ export function DashboardShell({
     const menu = new Menu();
     menu.addItem((item) =>
       item.setTitle("重命名").setIcon("pencil").onClick(() => {
-        const name = window.prompt("主页名称", tab.name);
-        if (name) void tabManager.rename(tab.id, name);
+        void promptDialog(app, {
+          title: "重命名主页",
+          message: "输入新的主页名称。",
+          value: tab.name,
+          confirmText: "重命名",
+          validate: (value) => value ? undefined : "主页名称不能为空。",
+        }).then((name) => {
+          if (name) void tabManager.rename(tab.id, name);
+        });
       }),
     );
     menu.addItem((item) =>
@@ -253,9 +267,14 @@ export function DashboardShell({
     );
     menu.addItem((item) =>
       item.setTitle("删除主页").setIcon("trash-2").onClick(() => {
-        if (window.confirm(`确认删除主页“${tab.name}”？`)) {
-          void tabManager.remove(tab.id);
-        }
+        void confirmDialog(app, {
+          title: "删除主页",
+          message: `确认删除主页“${tab.name}”？该主页的布局会被移除。`,
+          confirmText: "删除主页",
+          destructive: true,
+        }).then((confirmed) => {
+          if (confirmed) void tabManager.remove(tab.id);
+        });
       }),
     );
     menu.showAtMouseEvent(event);
@@ -281,7 +300,7 @@ export function DashboardShell({
         description: contribution.description ?? `来自 ${moduleId}`,
         icon: contribution.icon ?? "blocks",
         category,
-        defaultConfig: {},
+        defaultConfig: structuredClone(settings.moduleSettings[moduleId] ?? {}),
       };
     });
   const renderWidget = (widget: WidgetInstance) => (
@@ -523,7 +542,7 @@ export function DashboardShell({
           <button
             type="button"
             class="mypage-secondary-button"
-            onClick={addGroup}
+            onClick={() => void addGroup()}
           >
             <Icon name="folder-plus" />添加分组
           </button>

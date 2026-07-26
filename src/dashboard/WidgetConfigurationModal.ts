@@ -16,6 +16,9 @@ interface JsonSchema {
   default?: unknown;
   enum?: unknown[];
   properties?: Record<string, JsonSchema>;
+  format?: string;
+  pattern?: string;
+  minLength?: number;
 }
 
 export class WidgetConfigurationModal extends Modal {
@@ -25,6 +28,7 @@ export class WidgetConfigurationModal extends Modal {
   private moduleSchema?: JsonSchema;
   private moduleSchemaLoading = false;
   private moduleSchemaError = "";
+  private readonly fieldErrors = new Map<string, string>();
 
   public constructor(
     app: App,
@@ -88,9 +92,15 @@ export class WidgetConfigurationModal extends Modal {
         button.setButtonText("取消").onClick(() => this.close()),
       )
       .addButton((button) =>
-        button.setButtonText("应用到编辑会话").setCta().onClick(() => {
+        button.setButtonText("应用到编辑会话").setCta().onClick(async () => {
           if (!this.draft.dataBinding.sourceId) {
             new Notice("数据源 ID 不能为空。");
+            return;
+          }
+          if (!(await this.validateBeforeSave())) {
+            this.activeTab = "content";
+            this.renderShell();
+            new Notice("请先修正红色标记的配置项。");
             return;
           }
           this.onSave(structuredClone(this.draft));
@@ -189,17 +199,13 @@ export class WidgetConfigurationModal extends Modal {
             this.draft.config.taskPath = value.trim();
           },
           placeholder: "MyPage/TODO.md",
+          fieldKey: "taskPath",
+          validate: (value) => validateVaultFilePath(value),
         });
-        new Setting(container)
-          .setName("显示已完成任务")
-          .setDesc("关闭后仅显示未完成任务。")
-          .addToggle((toggle) =>
-            toggle
-              .setValue(Boolean(this.draft.config.showCompleted))
-              .onChange((value) => {
-                this.draft.config.showCompleted = value;
-              }),
-          );
+        container.createEl("p", {
+          cls: "mypage-config-hint",
+          text: "已完成任务会自动移到底部并显示完成时间；仅可通过右键菜单清除记录。",
+        });
         break;
       case "goals":
         this.addNumberSetting(container, "目标数量", "进度圆环达到 100% 所需的记录数量。", {
@@ -234,6 +240,8 @@ export class WidgetConfigurationModal extends Modal {
               delete this.draft.config.path;
             },
             placeholder: "MyPage/{date}.md",
+            fieldKey: "pathTemplate",
+            validate: (value) => validateVaultFilePath(value, true),
           },
         );
         this.addTextAreaSetting(container, "新笔记初始内容", "创建成功后写入的 Markdown 内容。", {
@@ -474,6 +482,7 @@ export class WidgetConfigurationModal extends Modal {
           this.draft.config[key] = value;
         },
         rows: 6,
+        fieldKey: key,
       });
       return;
     }
@@ -482,6 +491,8 @@ export class WidgetConfigurationModal extends Modal {
       set: (value) => {
         this.draft.config[key] = value;
       },
+      fieldKey: key,
+      validate: (value) => this.validateSchemaText(key, schema, value),
     });
   }
 
@@ -493,15 +504,42 @@ export class WidgetConfigurationModal extends Modal {
       get: () => string;
       set: (value: string) => void;
       placeholder?: string;
+      fieldKey?: string;
+      validate?: (value: string) => string | undefined | Promise<string | undefined>;
     },
   ): void {
-    new Setting(container)
+    const setting = new Setting(container)
       .setName(name)
       .setDesc(description)
       .addText((text) => {
         text.setValue(options.get()).onChange(options.set);
         if (options.placeholder) text.setPlaceholder(options.placeholder);
+        text.inputEl.title = description;
+        text.inputEl.setAttr("aria-describedby", `mypage-help-${options.fieldKey ?? name}`);
+        if (options.fieldKey && options.validate) {
+          const validate = async () => {
+            const message = await options.validate?.(text.inputEl.value.trim());
+            this.setFieldError(
+              options.fieldKey!,
+              message,
+              text.inputEl,
+              setting.settingEl,
+            );
+          };
+          text.inputEl.addEventListener("blur", () => void validate());
+          text.inputEl.addEventListener("input", () => {
+            if (this.fieldErrors.has(options.fieldKey!)) void validate();
+          });
+        }
       });
+    setting.descEl.id = `mypage-help-${options.fieldKey ?? name}`;
+    if (options.fieldKey) {
+      this.renderFieldError(
+        options.fieldKey,
+        setting.controlEl.querySelector("input, textarea, select"),
+        setting.settingEl,
+      );
+    }
   }
 
   private addTextAreaSetting(
@@ -519,6 +557,7 @@ export class WidgetConfigurationModal extends Modal {
       .setDesc(description)
       .addTextArea((text) => {
         text.inputEl.rows = options.rows;
+        text.inputEl.title = description;
         text
           .setValue(String(this.draft.config[options.key] ?? options.fallback))
           .onChange((value) => {
@@ -538,6 +577,7 @@ export class WidgetConfigurationModal extends Modal {
       .setDesc(description)
       .addText((text) => {
         text.inputEl.type = "date";
+        text.inputEl.title = description;
         text
           .setValue(String(this.draft.config[options.key] ?? ""))
           .onChange((value) => {
@@ -562,6 +602,7 @@ export class WidgetConfigurationModal extends Modal {
       .setDesc(description)
       .addText((text) => {
         text.inputEl.type = "number";
+        text.inputEl.title = description;
         if (options.minimum !== undefined) text.inputEl.min = String(options.minimum);
         if (options.maximum !== undefined) text.inputEl.max = String(options.maximum);
         text
@@ -589,6 +630,7 @@ export class WidgetConfigurationModal extends Modal {
       .setName(name)
       .setDesc(description)
       .addDropdown((dropdown) => {
+        dropdown.selectEl.title = description;
         for (const [value, label] of Object.entries(options.options)) {
           dropdown.addOption(value, label);
         }
@@ -608,11 +650,12 @@ export class WidgetConfigurationModal extends Modal {
     new Setting(container)
       .setName(name)
       .setDesc(description)
-      .addTextArea((text) =>
+      .addTextArea((text) => {
+        text.inputEl.title = description;
         text
           .setValue(options.get().join(", "))
-          .onChange((value) => options.set(parseList(value))),
-      );
+          .onChange((value) => options.set(parseList(value)));
+      });
   }
 
   private addJsonSetting(
@@ -624,14 +667,16 @@ export class WidgetConfigurationModal extends Modal {
       set: (value: unknown) => void;
       rows: number;
       objectOnly?: boolean;
+      fieldKey?: string;
     },
   ): void {
-    new Setting(container)
+    const setting = new Setting(container)
       .setName(name)
       .setDesc(description)
       .addTextArea((text) => {
         text.inputEl.rows = options.rows;
         text.inputEl.addClass("mypage-json-editor");
+        text.inputEl.title = description;
         text.setValue(JSON.stringify(options.get(), null, 2));
         text.onChange((value) => {
           try {
@@ -644,11 +689,149 @@ export class WidgetConfigurationModal extends Modal {
             }
             options.set(parsed);
             text.inputEl.removeClass("has-error");
-          } catch {
+            if (options.fieldKey) {
+              this.setFieldError(
+                options.fieldKey,
+                undefined,
+                text.inputEl,
+                setting.settingEl,
+              );
+            }
+          } catch (error) {
             text.inputEl.addClass("has-error");
+            if (options.fieldKey) {
+              this.setFieldError(
+                options.fieldKey,
+                error instanceof Error ? error.message : "JSON 格式无效。",
+                text.inputEl,
+                setting.settingEl,
+              );
+            }
           }
         });
       });
+    if (options.fieldKey) {
+      this.renderFieldError(
+        options.fieldKey,
+        setting.controlEl.querySelector("textarea"),
+        setting.settingEl,
+      );
+    }
+  }
+
+  private async validateBeforeSave(): Promise<boolean> {
+    this.fieldErrors.clear();
+    if (this.draft.moduleId !== "mypage-core") {
+      for (const [key, schema] of Object.entries(
+        this.moduleSchema?.properties ?? {},
+      )) {
+        if (schema.type !== "string" && !schema.enum) continue;
+        const message = await this.validateSchemaText(
+          key,
+          schema,
+          String(this.draft.config[key] ?? ""),
+        );
+        if (message) this.fieldErrors.set(key, message);
+      }
+    }
+    const taskPath =
+      this.draft.contributionId === "tasks"
+        ? validateVaultFilePath(String(this.draft.config.taskPath ?? ""))
+        : undefined;
+    if (taskPath) this.fieldErrors.set("taskPath", taskPath);
+    const pathTemplate =
+      this.draft.contributionId === "markdown-actions"
+        ? validateVaultFilePath(
+            String(this.draft.config.pathTemplate ?? ""),
+            true,
+          )
+        : undefined;
+    if (pathTemplate) this.fieldErrors.set("pathTemplate", pathTemplate);
+    return this.fieldErrors.size === 0;
+  }
+
+  private async validateSchemaText(
+    key: string,
+    schema: JsonSchema,
+    value: string,
+  ): Promise<string | undefined> {
+    if (schema.minLength !== undefined && value.length < schema.minLength) {
+      return `${schema.title ?? key}至少需要 ${schema.minLength} 个字符。`;
+    }
+    if (schema.pattern) {
+      try {
+        if (!new RegExp(schema.pattern, "u").test(value)) {
+          return `${schema.title ?? key}不符合要求的格式。`;
+        }
+      } catch {
+        return `模块 Schema 中 ${key} 的 pattern 无效。`;
+      }
+    }
+    if (!value) return undefined;
+    if (schema.format === "extension" && !/^\.[A-Za-z0-9]+$/u.test(value)) {
+      return "扩展名需要以点开头，例如 .md。";
+    }
+    if (schema.format === "field-name" && !/^[A-Za-z_][\w.-]*$/u.test(value)) {
+      return "字段名只能包含字母、数字、下划线、点和连字符。";
+    }
+    if (
+      schema.format === "directory-path" ||
+      schema.format === "git-repository"
+    ) {
+      if (!/^(?:[A-Za-z]:[\\/]|\/)/u.test(value)) {
+        return "需要填写绝对路径，例如 H:\\GitHub\\project。";
+      }
+      try {
+        const fs = await import("node:fs/promises");
+        const stat = await fs.stat(value);
+        if (!stat.isDirectory()) return "此路径不是文件夹。";
+        if (schema.format === "git-repository") {
+          const separator = value.endsWith("/") || value.endsWith("\\") ? "" : "/";
+          const git = await fs.stat(`${value}${separator}.git`);
+          if (!git.isDirectory()) return "此文件夹不是 Git 仓库（找不到 .git）。";
+        }
+      } catch {
+        return schema.format === "git-repository"
+          ? "查无此 Git 仓库，或当前用户无权读取。"
+          : "查无此文件夹，或当前用户无权读取。";
+      }
+    }
+    return undefined;
+  }
+
+  private setFieldError(
+    key: string,
+    message: string | undefined,
+    input: HTMLElement,
+    settingEl: HTMLElement,
+  ): void {
+    if (message) this.fieldErrors.set(key, message);
+    else this.fieldErrors.delete(key);
+    input.toggleClass("has-error", Boolean(message));
+    input.setAttr("aria-invalid", String(Boolean(message)));
+    let error = settingEl.querySelector<HTMLElement>(
+      `[data-mypage-field-error="${CSS.escape(key)}"]`,
+    );
+    if (!error) {
+      error = settingEl.createDiv({
+        cls: "mypage-field-error",
+        attr: {
+          "data-mypage-field-error": key,
+          role: "alert",
+          "aria-live": "polite",
+        },
+      });
+    }
+    error.setText(message ?? "");
+  }
+
+  private renderFieldError(
+    key: string,
+    input: Element | null,
+    settingEl: HTMLElement,
+  ): void {
+    if (!(input instanceof HTMLElement)) return;
+    this.setFieldError(key, this.fieldErrors.get(key), input, settingEl);
   }
 }
 
@@ -672,4 +855,25 @@ function applySchemaDefaults(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function validateVaultFilePath(
+  value: string,
+  allowTokens = false,
+): string | undefined {
+  if (!value.trim()) return "路径不能为空。";
+  const candidate = allowTokens
+    ? value.replace(/\{(?:date|Date|time|timestamp)\}/gu, "token")
+    : value;
+  if (
+    candidate.startsWith("/") ||
+    /^[A-Za-z]:/u.test(candidate) ||
+    candidate.split(/[\\/]/u).includes("..")
+  ) {
+    return "需要填写 Vault 内的相对路径，不能包含盘符、开头斜杠或 ..。";
+  }
+  if (!candidate.toLocaleLowerCase().endsWith(".md")) {
+    return "目标路径必须以 .md 结尾。";
+  }
+  return undefined;
 }

@@ -33,6 +33,7 @@
   height: 100%;
   overflow: auto;
   scrollbar-gutter: stable;
+  font-family: var(--mypage-font-family, var(--font-interface));
 }
 
 .mypage-shell[data-compact-tabs="true"] .mypage-tab {
@@ -302,6 +303,8 @@
   min-height: calc(100% - 58px);
   margin: 0 auto;
   padding: 28px 24px 48px;
+  color: var(--mypage-text, var(--text-normal));
+  background-color: var(--mypage-background, transparent);
 }
 
 .mypage-edit-strip {
@@ -697,6 +700,23 @@
 
 .mypage-tasks-list label:hover {
   background: var(--background-modifier-hover);
+}
+
+.mypage-tasks-list label.is-completed {
+  order: 2;
+  color: var(--text-muted);
+  border: 1px solid color-mix(in srgb, var(--color-green) 24%, transparent);
+  background: color-mix(in srgb, var(--color-green) 7%, transparent);
+}
+
+.mypage-tasks-list label.is-completed strong {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  opacity: 0.78;
+}
+
+.mypage-tasks-list label.is-completed small {
+  color: color-mix(in srgb, var(--color-green) 72%, var(--text-muted));
 }
 
 .mypage-tasks-list input {
@@ -1415,7 +1435,522 @@ button.mypage-overlay {
 }
 
 .mypage-settings {
-  max-width: 840px;
+  width: min(100%, 1180px);
+  max-width: 1180px;
+  padding-bottom: 64px;
+}
+
+.mypage-settings-header,
+.mypage-settings-brand,
+.mypage-settings-tabs,
+.mypage-market-toolbar,
+.mypage-market-detail-actions,
+.mypage-module-management-actions,
+.mypage-about-links {
+  display: flex;
+  align-items: center;
+}
+
+.mypage-settings-header {
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--interactive-accent) 12%, transparent), transparent 60%),
+    var(--background-secondary);
+}
+
+.mypage-settings-brand {
+  min-width: 0;
+  gap: 12px;
+}
+
+.mypage-settings-brand h2,
+.mypage-settings-brand p,
+.mypage-settings-section-intro h2,
+.mypage-settings-section-intro p,
+.mypage-about-hero h2,
+.mypage-about-hero p {
+  margin: 0;
+}
+
+.mypage-settings-brand p,
+.mypage-settings-section-intro p,
+.mypage-about-hero p {
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+
+.mypage-settings-logo,
+.mypage-about-logo {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--interactive-accent) 28%, transparent);
+}
+
+.mypage-settings-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+}
+
+.mypage-settings-tabs {
+  position: sticky;
+  z-index: 8;
+  top: -1px;
+  gap: 4px;
+  margin: 14px 0 18px;
+  padding: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+  backdrop-filter: blur(14px);
+  scrollbar-width: thin;
+}
+
+.mypage-settings-tabs button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 11px;
+  color: var(--text-muted);
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  transition: color 160ms ease, background-color 160ms ease;
+}
+
+.mypage-settings-tabs button:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+.mypage-settings-tabs button.is-active {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
+
+.mypage-settings-tabs svg {
+  width: 16px;
+  height: 16px;
+}
+
+.mypage-settings-panel {
+  min-width: 0;
+}
+
+.mypage-settings-section-intro {
+  margin: 4px 0 14px;
+  padding: 4px 2px 14px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.mypage-settings-panel > .setting-item:not(.setting-item-heading) {
+  margin: 8px 0;
+  padding: 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  background: var(--background-secondary);
+}
+
+.mypage-active-theme-card,
+.mypage-about-hero,
+.mypage-about-facts,
+.mypage-module-management-card {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 14px;
+  background: var(--background-secondary);
+}
+
+.mypage-active-theme-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 14px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.mypage-active-theme-card .mypage-theme-preview {
+  min-height: 72px;
+}
+
+.mypage-active-theme-card small {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-muted);
+}
+
+.mypage-market-toolbar {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mypage-market-toolbar input[type="search"] {
+  flex: 1 1 220px;
+}
+
+.mypage-market-toolbar select,
+.mypage-market-toolbar button,
+.mypage-market-toolbar input {
+  min-height: 38px;
+}
+
+.mypage-market-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(270px, .8fr);
+  gap: 14px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.mypage-theme-grid,
+.mypage-module-market-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mypage-theme-card,
+.mypage-module-market-card {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  min-width: 0;
+  white-space: normal;
+  padding: 12px;
+  color: var(--text-normal);
+  text-align: left;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  background: var(--background-secondary);
+  box-shadow: none;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.mypage-theme-card:hover,
+.mypage-module-market-card:hover,
+.mypage-theme-card.is-selected,
+.mypage-module-market-card.is-selected {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.mypage-theme-card {
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 7px;
+  min-height: 196px;
+}
+
+.mypage-theme-preview {
+  display: block;
+  width: 100%;
+  height: 90px;
+  min-height: 90px;
+  border-radius: 9px;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
+}
+
+.mypage-theme-card span,
+.mypage-theme-card small,
+.mypage-module-market-card p,
+.mypage-module-market-card small {
+  color: var(--text-muted);
+}
+
+.mypage-theme-card span,
+.mypage-theme-card small {
+  display: block;
+}
+
+.mypage-module-market-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  min-height: 112px;
+}
+
+.mypage-module-market-card p {
+  display: -webkit-box;
+  margin: 5px 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.mypage-market-module-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: var(--interactive-accent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+}
+
+.mypage-market-detail {
+  position: sticky;
+  top: 72px;
+  min-height: 180px;
+  padding: 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 14px;
+  background: var(--background-secondary);
+}
+
+.mypage-market-detail h3 {
+  margin: 0 0 8px;
+}
+
+.mypage-market-detail-meta {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.mypage-market-detail-actions,
+.mypage-about-links {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mypage-theme-palette {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.mypage-theme-palette span {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgb(127 127 127 / 24%);
+  border-radius: 50%;
+}
+
+.mypage-market-status,
+.mypage-market-empty {
+  margin: 12px 0;
+  padding: 12px;
+  color: var(--text-muted);
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 10px;
+}
+
+.mypage-module-management-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mypage-module-management-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+}
+
+.mypage-module-management-card small {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+
+.mypage-module-management-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 7px;
+}
+
+.mypage-about-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+}
+
+.mypage-about-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+}
+
+.mypage-about-logo svg {
+  width: 34px;
+  height: 34px;
+}
+
+.mypage-about-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  color: var(--text-normal);
+  text-decoration: none;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 9px;
+}
+
+.mypage-about-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.mypage-about-facts > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  background: var(--background-primary);
+}
+
+.mypage-about-facts small {
+  color: var(--text-muted);
+}
+
+.mypage-dialog-modal {
+  width: min(92vw, 520px);
+}
+
+.mypage-dialog-modal .modal-content {
+  padding-top: 4px;
+}
+
+.mypage-dialog-message {
+  margin: 8px 0 16px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.mypage-dialog-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+}
+
+textarea.mypage-dialog-input {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.mypage-dialog-actions {
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.mypage-dialog-actions .setting-item {
+  padding: 0;
+  border: 0;
+}
+
+.mypage-field-error {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 0;
+  margin-top: 5px;
+  color: var(--text-error);
+  font-size: 12px;
+}
+
+.mypage-field-error:empty {
+  display: none;
+}
+
+input.has-error,
+textarea.has-error,
+select.has-error {
+  border-color: var(--text-error) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-error) 18%, transparent) !important;
+}
+
+.mypage-permission-scope-editor {
+  margin: -1px 0 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--interactive-accent) 38%, var(--background-modifier-border));
+  border-radius: 0 0 12px 12px;
+  background: color-mix(in srgb, var(--interactive-accent) 7%, var(--background-secondary));
+}
+
+.mypage-permission-scope-editor label {
+  display: block;
+  margin-bottom: 7px;
+  font-weight: 600;
+}
+
+.mypage-permission-scope-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+}
+
+.mypage-field-help {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-muted);
+}
+
+.mypage-permission-scope-actions {
+  display: flex;
+  justify-content: end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mypage-config-hint {
+  padding: 10px 12px;
+  color: var(--text-muted);
+  border-left: 3px solid var(--interactive-accent);
+  border-radius: 0 8px 8px 0;
+  background: var(--background-secondary);
+}
+
+@media (max-width: 760px) {
+  .mypage-settings-header,
+  .mypage-module-management-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mypage-market-layout,
+  .mypage-active-theme-card,
+  .mypage-about-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .mypage-theme-grid,
+  .mypage-module-market-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mypage-market-detail {
+    position: static;
+  }
+
+  .mypage-about-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1023px) {

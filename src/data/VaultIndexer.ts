@@ -156,7 +156,15 @@ export class VaultIndexer {
       const match = source.match(/^\s*[-*+]\s+\[([ xX-])\]\s+(.*)$/u);
       if (!match) return [];
       const marker = (match[1] ?? " ").toLocaleLowerCase();
-      const text = match[2]?.trim() ?? "";
+      const rawText = match[2]?.trim() ?? "";
+      const completion = rawText.match(
+        /^(.*?)\s*<!--\s*mypage:completed=([^>]+)\s*-->\s*$/u,
+      );
+      const text = (completion?.[1] ?? rawText).trim();
+      const completedAt =
+        completion?.[2] && Number.isFinite(Date.parse(completion[2]))
+          ? completion[2]
+          : undefined;
       return [{
         id: `task:${file.path}:${line}`,
         sourceId: "core.tasks",
@@ -171,6 +179,7 @@ export class VaultIndexer {
           line,
           marker,
           completed: marker === "x",
+          completedAt: completedAt ?? null,
           status: marker === "x" ? "completed" : marker === "-" ? "cancelled" : "open",
           text,
           modified: file.stat.mtime,

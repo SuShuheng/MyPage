@@ -1,8 +1,10 @@
-import { Notice, Platform } from "obsidian";
+import { Notice, Platform, type App } from "obsidian";
 import type { UpdateService } from "./UpdateService";
 import type { AvailableUpdate } from "./update-types";
+import { confirmDialog } from "../components/ThemeDialog";
 
 export function showUpdateNotice(
+  app: App,
   update: AvailableUpdate,
   service: UpdateService,
 ): Notice {
@@ -36,11 +38,11 @@ export function showUpdateNotice(
       window.open(update.release.html_url, "_blank", "noopener");
       return;
     }
-    if (
-      !window.confirm(
-        `确认更新到 MyPage ${update.version}？插件会先校验哈希并备份当前版本。`,
-      )
-    ) {
+    if (!(await confirmDialog(app, {
+      title: `更新到 MyPage ${update.version}`,
+      message: "插件会先校验哈希并备份当前版本，校验失败时自动回滚。",
+      confirmText: "校验并更新",
+    }))) {
       return;
     }
     install.disabled = true;

@@ -18,6 +18,7 @@ vi.mock("obsidian", () => ({
   App: class App {},
   ItemView: class ItemView {},
   Notice: class Notice {},
+  Modal: class Modal {},
   Platform: { isDesktopApp: true },
   Plugin: class Plugin {},
   PluginSettingTab: class PluginSettingTab {},

@@ -33,4 +33,28 @@ describe("MarketplaceService detection policy", () => {
     expect(index.repository).toBe("someone/market");
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it("falls back to the bundled trusted index when the official repo is unavailable", async () => {
+    const settings = createDefaultSettings();
+    const store = {
+      snapshot: settings,
+      update: vi.fn(async (mutate: (draft: typeof settings) => void) => {
+        mutate(settings);
+      }),
+    };
+    const service = new MarketplaceService(
+      store as unknown as SettingsStore,
+      {
+        fetch: vi.fn().mockRejectedValue(new Error("HTTP 404")),
+      } as unknown as GithubMarketClient,
+      {} as ModuleInstaller,
+    );
+
+    const index = await service.check("official", "official-page-open");
+    expect(index.repository).toBe("SuShuHeng/MyPage");
+    expect(index.modules.map((module) => module.id)).toEqual(
+      expect.arrayContaining(["hello-widget", "hexo-insights"]),
+    );
+    expect(settings.markets.official?.cachedIndex?.index).toEqual(index);
+  });
 });

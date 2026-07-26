@@ -67,7 +67,7 @@ export const BUILT_IN_WIDGETS: BuiltInWidgetDefinition[] = [
     icon: "list-todo",
     category: "效率",
     defaultConfig: {
-      showCompleted: false,
+      showCompleted: true,
       taskPath: "MyPage/TODO.md",
     },
   },

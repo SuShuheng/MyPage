@@ -29,6 +29,22 @@ for (const directory of await moduleDirectories(moduleRoot)) {
     license: manifest.license,
     path: `diy-plugins/${manifest.id}`,
     repository: "SuShuHeng/MyPage",
+    categories: [
+      ...new Set(
+        manifest.contributions.map((contribution) =>
+          contribution.kind === "widget"
+            ? "visualization"
+            : contribution.kind === "dataSource" ||
+                contribution.kind === "transform"
+              ? "data"
+              : contribution.kind === "action"
+                ? "actions"
+                : contribution.kind === "dashboardTemplate"
+                  ? "templates"
+                  : "settings",
+        ),
+      ),
+    ],
     versions: [
       {
         version: manifest.version,

@@ -15,10 +15,23 @@ export class ThemeService {
     const profile = dashboard.themeProfileId
       ? settings.themeProfiles[dashboard.themeProfileId]
       : undefined;
-    return toCssProperties({
+    const style = toCssProperties({
       ...DEFAULT_THEME_TOKENS,
       ...(profile?.tokens ?? {}),
     });
+    if (profile?.fontFamily) {
+      style["--mypage-font-family"] = profile.fontFamily;
+    }
+    const motionScale = profile?.motionScale ?? 1;
+    style["--mypage-motion-scale"] = motionScale;
+    style["--mypage-transition"] = `${Math.max(0, Math.round(180 * motionScale))}ms ease-out`;
+    if (profile?.backgroundImage) {
+      style.backgroundImage = normalizeBackgroundImage(profile.backgroundImage);
+      style.backgroundSize = "cover";
+      style.backgroundPosition = "center";
+      style.backgroundAttachment = "fixed";
+    }
+    return style;
   }
 
   public widgetStyle(
@@ -45,13 +58,60 @@ export class ThemeService {
       ...(appearance.themeOverrides ?? {}),
     };
     return {
-      ...tokens,
+      ...resolveSandboxTokens(tokens),
       mode: profile?.mode ?? "obsidian",
-      palette: tokens.palette.join(","),
       widgetBackgroundVisible: appearance.showBackground ? 1 : 0,
       widgetBorderVisible: appearance.showBorder ? 1 : 0,
     };
   }
+}
+
+function normalizeBackgroundImage(value: string): string {
+  const trimmed = value.trim();
+  if (
+    trimmed.startsWith("linear-gradient(") ||
+    trimmed.startsWith("radial-gradient(") ||
+    trimmed.startsWith("url(")
+  ) {
+    return trimmed;
+  }
+  return `url("${trimmed.replaceAll('"', '\\"')}")`;
+}
+
+export function resolveSandboxTokens(
+  tokens: ThemeTokens,
+  root: Element = document.documentElement,
+): Record<string, string | number> {
+  const style = getComputedStyle(root);
+  const resolve = (value: string, fallback: string): string => {
+    let current = value;
+    for (let pass = 0; pass < 5 && current.includes("var("); pass += 1) {
+      current = current.replace(
+        /var\(\s*(--[\w-]+)(?:\s*,\s*([^)]+))?\)/gu,
+        (_match, name: string, inlineFallback: string | undefined) =>
+          style.getPropertyValue(name).trim() ||
+          inlineFallback?.trim() ||
+          fallback,
+      );
+    }
+    return current.trim() || fallback;
+  };
+  return {
+    background: resolve(tokens.background, "#ffffff"),
+    cardBackground: resolve(tokens.cardBackground, "#f6f7f9"),
+    text: resolve(tokens.text, "#1f2328"),
+    mutedText: resolve(tokens.mutedText, "#667085"),
+    accent: resolve(tokens.accent, "#7c3aed"),
+    border: resolve(tokens.border, "rgba(127,127,127,.28)"),
+    radius: tokens.radius,
+    shadow: resolve(tokens.shadow, "0 10px 30px rgba(0,0,0,.08)"),
+    opacity: tokens.opacity,
+    blur: tokens.blur,
+    gap: tokens.gap,
+    palette: tokens.palette
+      .map((color) => resolve(color, "#7c3aed"))
+      .join(","),
+  };
 }
 
 function toCssProperties(

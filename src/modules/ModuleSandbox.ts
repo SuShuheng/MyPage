@@ -215,6 +215,8 @@ function createSandboxDocument(
     let sequence = 0;
     const pending = new Map();
     const listeners = { data: new Set(), theme: new Set() };
+    let hasData = false;
+    let latestData;
     const api = Object.freeze({
       root: document.getElementById("mypage-root"),
       moduleId: payload.moduleId,
@@ -225,7 +227,11 @@ function createSandboxDocument(
         parent.postMessage({ type: "rpc", session: payload.session, id, capability, input }, "*");
         return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
       },
-      onData(listener) { listeners.data.add(listener); return () => listeners.data.delete(listener); },
+      onData(listener) {
+        listeners.data.add(listener);
+        if (hasData) queueMicrotask(() => listener(latestData));
+        return () => listeners.data.delete(listener);
+      },
       onTheme(listener) { listeners.theme.add(listener); return () => listeners.theme.delete(listener); },
       publishRecords(records) {
         if (!Array.isArray(records)) throw new Error("publishRecords expects an array.");
@@ -241,7 +247,9 @@ function createSandboxDocument(
         pending.delete(event.data.id);
         event.data.ok ? item.resolve(event.data.result) : item.reject(new Error(event.data.error));
       } else if (event.data.type === "data") {
-        listeners.data.forEach(listener => listener(event.data.data));
+        hasData = true;
+        latestData = event.data.data;
+        listeners.data.forEach(listener => listener(latestData));
       } else if (event.data.type === "theme") {
         applyTheme(event.data.theme);
         listeners.theme.forEach(listener => listener(event.data.theme));

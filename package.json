@@ -21,6 +21,7 @@
     "dev:deploy": "node scripts/deploy-test-vault.mjs",
     "validate:modules": "node scripts/validate-module.mjs --all",
     "validate:market": "node scripts/validate-market.mjs",
+    "validate:theme-market": "node scripts/validate-theme-market.mjs",
     "build:market": "node scripts/build-market.mjs",
     "package:module": "node scripts/package-module.mjs",
     "module:dev": "node scripts/package-module.mjs",

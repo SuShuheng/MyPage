@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "mypage-official-themes",
+  "name": "MyPage 官方主题市场",
+  "description": "MyPage 团队维护的主题目录。",
+  "repository": "SuShuHeng/MyPage",
+  "index": ".mypage-theme-market/index.json"
+}

@@ -195,6 +195,15 @@ export interface ThemeProfile {
   name: string;
   mode: ThemeMode;
   tokens: Partial<ThemeTokens>;
+  description?: string;
+  author?: string;
+  version?: string;
+  sourceType?: "official" | "third-party" | "custom";
+  sourceId?: string;
+  fontFamily?: string;
+  backgroundImage?: string;
+  motionScale?: number;
+  preview?: string;
 }
 
 export interface ModuleInstallation {
@@ -255,6 +264,15 @@ export interface MarketplaceSource {
   lastManualCheckAt?: number;
 }
 
+export interface ThemeMarketplaceSource {
+  id: string;
+  repo: string;
+  type: "third-party";
+  enabled: boolean;
+  cachedIndex?: MarketplaceIndexCache;
+  lastManualCheckAt?: number;
+}
+
 export interface EditDraft {
   dashboardId: string;
   baseRevision: number;
@@ -298,6 +316,7 @@ export interface MyPageSettingsV1 {
   moduleSettings: Record<string, Record<string, unknown>>;
   permissions: PermissionGrant[];
   markets: Record<string, MarketplaceSource>;
+  themeMarkets?: Record<string, ThemeMarketplaceSource>;
   themeProfiles: Record<string, ThemeProfile>;
   uiState: {
     lastActiveTabId: string;

@@ -13,6 +13,7 @@ import type {
 import type { GithubMarketClient} from "./GithubMarketClient";
 import { normalizeRepository } from "./GithubMarketClient";
 import { validateMarketIndex } from "./market-schema";
+import bundledOfficialIndexJson from "../../.mypage-market/index.json";
 
 export type MarketCheckReason = "official-page-open" | "manual";
 
@@ -64,11 +65,19 @@ export class MarketplaceService {
     if (source.type === "third-party" && reason !== "manual") {
       return this.cachedIndex(source);
     }
-    const loaded = await this.client.fetch(
-      source.repo,
-      source.cachedIndex?.etag,
-      signal,
-    );
+    let loaded: Awaited<ReturnType<GithubMarketClient["fetch"]>>;
+    try {
+      loaded = await this.client.fetch(
+        source.repo,
+        source.cachedIndex?.etag,
+        signal,
+      );
+    } catch (error) {
+      if (source.type !== "official") throw error;
+      const bundled = bundledOfficialIndex();
+      await this.cacheIndex(sourceId, bundled, reason);
+      return bundled;
+    }
     if ("notModified" in loaded) {
       const index = this.cachedIndex(source);
       if (reason === "manual" && source.type === "third-party") {
@@ -103,6 +112,12 @@ export class MarketplaceService {
 
   public getCached(sourceId: string): MarketIndex | undefined {
     const source = this.store.snapshot.markets[sourceId];
+    if (
+      source?.type === "official" &&
+      (!source.cachedIndex || !validateMarketIndex(source.cachedIndex.index))
+    ) {
+      return bundledOfficialIndex();
+    }
     if (!source?.cachedIndex || !validateMarketIndex(source.cachedIndex.index)) {
       return undefined;
     }
@@ -175,6 +190,29 @@ export class MarketplaceService {
       "touch-third-party-market",
     );
   }
+
+  private async cacheIndex(
+    sourceId: string,
+    index: MarketIndex,
+    reason: MarketCheckReason,
+  ): Promise<void> {
+    const snapshot = this.store.snapshot;
+    await this.store.update(
+      (draft) => {
+        const source = draft.markets[sourceId];
+        if (!source) return;
+        source.cachedIndex = {
+          fetchedAt: Date.now(),
+          index: structuredClone(index),
+        };
+        if (reason === "manual" && source.type === "third-party") {
+          source.lastManualCheckAt = Date.now();
+        }
+      },
+      snapshot.revision,
+      "cache-bundled-official-market",
+    );
+  }
 }
 
 function selectLatestCompatible(module: MarketModule): MarketModuleVersion | undefined {
@@ -187,4 +225,11 @@ function selectLatestCompatible(module: MarketModule): MarketModuleVersion | und
         version.platforms.includes(Platform.isMobile ? "mobile" : "desktop"),
     )
     .sort((left, right) => rcompare(left.version, right.version))[0];
+}
+
+function bundledOfficialIndex(): MarketIndex {
+  if (!validateMarketIndex(bundledOfficialIndexJson)) {
+    throw new Error("内置官方模块市场索引无效。");
+  }
+  return structuredClone(bundledOfficialIndexJson);
 }

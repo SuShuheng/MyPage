@@ -14,6 +14,7 @@ const evidence = {
   endpoint,
   assertions: [],
   consoleErrors: [],
+  externalWarnings: [],
   pageErrors: [],
   exitCode: 1,
 };
@@ -26,7 +27,18 @@ try {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.reload({ waitUntil: "domcontentloaded" });
   page.on("console", (message) => {
-    if (message.type() === "error") evidence.consoleErrors.push(message.text().slice(0, 1_000));
+    if (message.type() === "error") {
+      const source = message.location().url;
+      const entry = `${message.text()}${source ? ` (${source})` : ""}`.slice(0, 1_000);
+      if (
+        source.startsWith("https://api.github.com/repos/SuShuHeng/MyPage/") &&
+        (message.text().includes("403") || message.text().includes("404"))
+      ) {
+        evidence.externalWarnings.push(entry);
+      } else {
+        evidence.consoleErrors.push(entry);
+      }
+    }
   });
   page.on("pageerror", (error) => evidence.pageErrors.push(error.message.slice(0, 1_000)));
 
@@ -106,13 +118,48 @@ try {
   const taskText = `MyPage E2E TODO ${Date.now()}`;
   const taskInput = tasksWidget.getByRole("textbox", { name: "新任务内容" });
   await taskInput.fill(taskText);
-  page.once("dialog", (dialog) => void dialog.accept());
   await tasksWidget.getByRole("button", { name: "创建任务" }).click();
+  const taskConfirm = page.locator(".mypage-dialog-modal");
+  await taskConfirm.waitFor({ state: "visible", timeout: 10_000 });
+  await taskConfirm.getByRole("button", { name: "创建", exact: true }).click();
   await tasksWidget.getByText(taskText, { exact: true }).waitFor({
     state: "visible",
     timeout: 20_000,
   });
-  evidence.assertions.push("TODO widget created and refreshed a controlled task write");
+  const createdTask = tasksWidget
+    .locator(".mypage-tasks-list label")
+    .filter({ hasText: taskText });
+  await createdTask.locator('input[type="checkbox"]').click();
+  await createdTask.waitFor({ state: "visible", timeout: 20_000 });
+  await createdTask.getByText(/完成于/).waitFor({
+    state: "visible",
+    timeout: 20_000,
+  });
+  const taskLabels = tasksWidget.locator(".mypage-tasks-list label");
+  const taskOrder = await taskLabels.evaluateAll((labels, text) => ({
+    createdIndex: labels.findIndex((label) =>
+      label.textContent?.includes(String(text))),
+    completed: labels.map(
+      (label) =>
+        label.querySelector('input[type="checkbox"]')?.checked === true,
+    ),
+  }), taskText);
+  const firstCompleted = taskOrder.completed.indexOf(true);
+  if (
+    firstCompleted < 0 ||
+    taskOrder.createdIndex < firstCompleted ||
+    taskOrder.completed.slice(firstCompleted).some((completed) => !completed)
+  ) {
+    throw new Error("Completed TODO records were not grouped at the bottom.");
+  }
+  await createdTask.click({ button: "right" });
+  await page.getByText("清除完成记录", { exact: true }).waitFor({
+    state: "visible",
+  });
+  await page.keyboard.press("Escape");
+  evidence.assertions.push(
+    "TODO create uses themed confirmation; completed task stays visible at bottom with time and context action",
+  );
 
   await page.getByRole("button", { name: "编辑" }).click();
   const editModeWidgetMenus = await page.locator(
@@ -298,8 +345,29 @@ try {
     state: "visible",
     timeout: 10_000,
   });
+  const publishedDirectory = moduleModal
+    .locator(".setting-item")
+    .filter({ hasText: "已发布文章目录" })
+    .locator("input");
+  if (!(await publishedDirectory.getAttribute("title"))?.includes("绝对")) {
+    throw new Error("Module field does not expose hover guidance.");
+  }
+  await publishedDirectory.fill("relative/path");
+  await publishedDirectory.blur();
+  await moduleModal.getByText(/需要填写绝对路径/).waitFor({
+    state: "visible",
+    timeout: 10_000,
+  });
+  const invalidBorder = await publishedDirectory.evaluate(
+    (element) => globalThis.getComputedStyle(element).borderColor,
+  );
+  if (!invalidBorder) {
+    throw new Error("Invalid module path did not receive visual feedback.");
+  }
   await moduleModal.getByRole("button", { name: "取消" }).click();
-  evidence.assertions.push("DIY module schema renders on the prioritized content tab");
+  evidence.assertions.push(
+    "DIY module settings expose hover guidance and inline path validation",
+  );
 
   await page.getByRole("button", { name: /完成/ }).click();
   const helloFrame = page
@@ -328,6 +396,23 @@ try {
     state: "visible",
     timeout: 20_000,
   });
+  const lifecycleCount = Number(
+    await lifecycleFrame
+      .contentFrame()
+      .locator(".hexo-metrics strong")
+      .first()
+      .textContent(),
+  );
+  const lifecycleColor = await lifecycleFrame
+    .contentFrame()
+    .locator(".hexo-metrics")
+    .evaluate((element) => globalThis.getComputedStyle(element).color);
+  if (!Number.isFinite(lifecycleCount) || lifecycleCount < 1) {
+    throw new Error(`DIY lifecycle module did not render records: ${lifecycleCount}.`);
+  }
+  if (lifecycleColor === "rgba(0, 0, 0, 0)" || lifecycleColor === "transparent") {
+    throw new Error("DIY lifecycle module text is transparent.");
+  }
   const moduleRootOverflow = await lifecycleFrame
     .contentFrame()
     .locator("html")
@@ -336,6 +421,123 @@ try {
     throw new Error(`DIY module root overflow is ${moduleRootOverflow}.`);
   }
   evidence.assertions.push("DIY module receives initial data and hides root scrolling");
+  for (const contributionId of [
+    "lifecycle-summary",
+    "pending-posts",
+    "blog-heatmap",
+    "writing-trend",
+    "repository-status",
+  ]) {
+    const frame = page
+      .locator(`iframe.mypage-module-sandbox[title$="${contributionId}"]`)
+      .first();
+    await frame.waitFor({ state: "attached", timeout: 10_000 });
+    const renderedChildren = await frame
+      .contentFrame()
+      .locator(".hexo-content")
+      .evaluate((element) => element.children.length);
+    if (renderedChildren < 1) {
+      throw new Error(`DIY contribution ${contributionId} rendered empty content.`);
+    }
+  }
+  evidence.assertions.push(
+    "Every imported Hexo widget contribution renders a visible content container",
+  );
+
+  await page.evaluate(() => {
+    const obsidian = globalThis;
+    const plugin = obsidian.app?.plugins?.plugins?.mypage;
+    if (!plugin) throw new Error("MyPage plugin instance is unavailable.");
+    plugin.openMarketplace();
+  });
+  const settingsRoot = page.locator(".mypage-settings");
+  await settingsRoot.waitFor({ state: "visible", timeout: 10_000 });
+  for (const tabName of [
+    "通用",
+    "高级",
+    "外观",
+    "主题市场",
+    "模块市场",
+    "模块管理",
+    "关于",
+    "备份与恢复",
+  ]) {
+    await settingsRoot.getByRole("tab", { name: tabName }).waitFor({
+      state: "visible",
+    });
+  }
+  await settingsRoot.getByText("Hello Widget", { exact: true }).waitFor({
+    state: "visible",
+  });
+  const helloMarketCard = settingsRoot
+    .locator(".mypage-module-market-card")
+    .filter({ hasText: "Hello Widget" });
+  await helloMarketCard.click();
+  const moduleMarketDetail = settingsRoot.locator(".mypage-market-detail");
+  await moduleMarketDetail.getByRole("heading", { name: "Hello Widget" }).waitFor({
+    state: "visible",
+  });
+  await moduleMarketDetail.getByRole("button", { name: "删除" }).waitFor({
+    state: "visible",
+  });
+  await page.screenshot({
+    path: path.join(artifacts, "testdev-module-market.png"),
+    fullPage: true,
+  });
+  evidence.assertions.push(
+    "Settings center exposes eight tabs and module cards open inline details and actions",
+  );
+  await settingsRoot.getByRole("tab", { name: "主题市场" }).click();
+  if ((await settingsRoot.locator(".mypage-theme-card").count()) < 4) {
+    throw new Error("Official theme market did not expose the preset themes.");
+  }
+  await settingsRoot.locator(".mypage-theme-card").first().click();
+  const themeMarketDetail = settingsRoot.locator(".mypage-market-detail");
+  await themeMarketDetail.locator("h3").waitFor({ state: "visible" });
+  await themeMarketDetail
+    .getByRole("button", { name: /安装主题|应用主题/ })
+    .first()
+    .waitFor({ state: "visible" });
+  await page.screenshot({
+    path: path.join(artifacts, "testdev-theme-market.png"),
+    fullPage: true,
+  });
+  evidence.assertions.push(
+    "Official theme market exposes multiple presets with inline details and install actions",
+  );
+  await settingsRoot.getByRole("tab", { name: "模块管理" }).click();
+  const hexoManagement = settingsRoot
+    .locator(".mypage-module-management-card")
+    .filter({ hasText: "可配置博客生命周期" });
+  await hexoManagement.getByRole("button", { name: "权限与信任" }).click();
+  const permissionModal = page.locator(".mypage-permission-modal");
+  await permissionModal.waitFor({ state: "visible", timeout: 10_000 });
+  await permissionModal
+    .getByRole("button", { name: "设置并授权" })
+    .first()
+    .click();
+  await permissionModal
+    .locator(".mypage-permission-scope-editor")
+    .waitFor({ state: "visible", timeout: 10_000 });
+  await page.screenshot({
+    path: path.join(artifacts, "testdev-permission-editor.png"),
+    fullPage: true,
+  });
+  evidence.assertions.push("Module setup-and-authorize action opens an inline scope editor");
+  await permissionModal.locator(".modal-close-button").click();
+  await settingsRoot.getByRole("tab", { name: "关于" }).click();
+  await settingsRoot.getByText(`MyPage 1.0.0`, { exact: true }).waitFor({
+    state: "visible",
+  });
+  await settingsRoot.getByText("Apache License 2.0", { exact: true }).waitFor({
+    state: "visible",
+  });
+  await page.screenshot({
+    path: path.join(artifacts, "testdev-settings.png"),
+    fullPage: true,
+  });
+  evidence.assertions.push("About tab exposes version, repository, license and updater controls");
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "编辑" }).click();
   const beforeCancel = await page.locator(".mypage-widget").count();
