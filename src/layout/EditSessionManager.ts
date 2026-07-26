@@ -16,6 +16,7 @@ import { UndoManager } from "./UndoManager";
 
 export class EditSessionManager {
   private readonly history: UndoManager<DashboardDraft>;
+  private readonly original: DashboardDraft;
   private committed = false;
   public readonly baseRevision: number;
   public readonly dashboardId: string;
@@ -25,8 +26,7 @@ export class EditSessionManager {
     if (!dashboard) throw new Error(`找不到 Dashboard：${dashboardId}`);
     this.dashboardId = dashboardId;
     this.baseRevision = settings.revision;
-    this.history = new UndoManager<DashboardDraft>(
-      {
+    this.original = {
         dashboard: structuredClone(dashboard),
         groups: Object.fromEntries(
           dashboard.groupIds
@@ -40,7 +40,9 @@ export class EditSessionManager {
             .filter((widget) => widget !== undefined)
             .map((widget) => [widget.id, structuredClone(widget)]),
         ),
-      },
+      };
+    this.history = new UndoManager<DashboardDraft>(
+      this.original,
       (value) => structuredClone(value),
       settings.uiState.debug ? 100 : 50,
     );
@@ -258,7 +260,7 @@ export class EditSessionManager {
   public cancel(): DashboardDraft {
     this.ensureOpen();
     this.committed = true;
-    return this.snapshot;
+    return structuredClone(this.original);
   }
 
   private ensureOpen(): void {

@@ -89,6 +89,15 @@ export class DataEngine {
     await this.indexer.build(signal, onProgress);
   }
 
+  public async refreshAll(): Promise<void> {
+    this.cache.clear();
+    await Promise.all(
+      [...this.subscriptions].map((subscription) =>
+        this.refreshSubscription(subscription),
+      ),
+    );
+  }
+
   public async registerDataSource(source: DataSource): Promise<() => void> {
     await source.connect();
     const unregisterRegistry = this.sources.register(source);

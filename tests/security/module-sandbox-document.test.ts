@@ -8,9 +8,11 @@ describe("Module sandbox source", () => {
     "utf8",
   );
 
-  it("uses allow-scripts without allow-same-origin", () => {
-    expect(source).toContain('setAttribute("sandbox", "allow-scripts")');
-    expect(source).not.toMatch(/allow-same-origin/u);
+  it("uses an opaque data document with a script-only sandbox bridge", () => {
+    expect(source).toContain('"allow-scripts allow-same-origin"');
+    expect(source).toContain("data:text/html;base64,");
+    expect(source).not.toContain("allow-top-navigation");
+    expect(source).not.toContain("allow-popups");
   });
 
   it("does not use eval or Function constructors", () => {
@@ -21,5 +23,10 @@ describe("Module sandbox source", () => {
   it("locks network access in the iframe CSP", () => {
     expect(source).toContain("connect-src 'none'");
     expect(source).toContain("default-src 'none'");
+  });
+
+  it("exposes host-controlled refresh subscriptions", () => {
+    expect(source).toContain("onRefresh(listener)");
+    expect(source).toContain('event.data.type === "refresh"');
   });
 });

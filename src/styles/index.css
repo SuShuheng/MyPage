@@ -1,9 +1,14 @@
 @import "gridstack/dist/gridstack.min.css";
 
 :root {
-  --mypage-focus: var(--interactive-accent);
+  --mypage-focus: var(--mypage-accent, var(--interactive-accent));
   --mypage-radius: 16px;
   --mypage-transition: 180ms ease-out;
+}
+
+body,
+.modal-container {
+  --mypage-accent: var(--mypage-active-accent, var(--interactive-accent));
 }
 
 .mypage-hidden-module-runtime {
@@ -22,18 +27,40 @@
 
 .mypage-view {
   height: 100%;
-  color: var(--text-normal);
-  background:
-    radial-gradient(circle at 12% -10%, color-mix(in srgb, var(--interactive-accent) 14%, transparent), transparent 38%),
-    var(--background-primary);
+  color: var(--mypage-text, var(--text-normal));
+  background: var(--mypage-background, var(--background-primary));
 }
 
 .mypage-shell {
   min-width: 0;
+  width: 100%;
   height: 100%;
   overflow: auto;
   scrollbar-gutter: stable;
+  color: var(--mypage-text, var(--text-normal));
+  background:
+    linear-gradient(
+      color-mix(
+        in srgb,
+        var(--mypage-background-overlay, transparent)
+          calc(var(--mypage-background-overlay-opacity, 0) * 100%),
+        transparent
+      ),
+      color-mix(
+        in srgb,
+        var(--mypage-background-overlay, transparent)
+          calc(var(--mypage-background-overlay-opacity, 0) * 100%),
+        transparent
+      )
+    ),
+    var(--mypage-background, var(--background-primary));
+  background-image: inherit;
+  background-size: inherit;
+  background-position: inherit;
+  background-repeat: inherit;
+  background-attachment: inherit;
   font-family: var(--mypage-font-family, var(--font-interface));
+  font-size: calc(1em * var(--mypage-font-scale, 1));
 }
 
 .mypage-shell[data-compact-tabs="true"] .mypage-tab {
@@ -57,7 +84,7 @@
     flex-direction: column;
     align-items: stretch;
     padding: 12px 8px;
-    border-right: 1px solid var(--background-modifier-border);
+    border-right: 1px solid var(--mypage-border, var(--background-modifier-border));
     background: var(--background-primary);
     overflow-y: auto;
   }
@@ -89,7 +116,7 @@
   padding: 8px 12px;
   border-radius: 8px;
   color: var(--text-on-accent);
-  background: var(--interactive-accent);
+  background: var(--mypage-accent, var(--interactive-accent));
   transform: translateY(-160%);
 }
 
@@ -107,8 +134,9 @@
   gap: 16px;
   min-height: 58px;
   padding: 8px 18px;
-  border-bottom: 1px solid var(--background-modifier-border);
-  background: color-mix(in srgb, var(--background-primary) 88%, transparent);
+  color: var(--mypage-text, var(--text-normal));
+  border-bottom: 1px solid var(--mypage-border, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--mypage-card-background, var(--background-primary)) 88%, transparent);
   backdrop-filter: blur(18px);
 }
 
@@ -155,7 +183,7 @@
 .mypage-drag-handle,
 .mypage-resize-handle {
   border: 0;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   background: transparent;
   cursor: pointer;
   transition:
@@ -176,14 +204,14 @@
 
 .mypage-tab:hover,
 .mypage-icon-button:hover {
-  color: var(--text-normal);
+  color: var(--mypage-text, var(--text-normal));
   background: var(--background-modifier-hover);
 }
 
 .mypage-tab.is-active {
-  color: var(--text-normal);
+  color: var(--mypage-text, var(--text-normal));
   background: var(--background-secondary-alt);
-  box-shadow: inset 0 0 0 1px var(--background-modifier-border);
+  box-shadow: inset 0 0 0 1px var(--mypage-border, var(--background-modifier-border));
 }
 
 .mypage-topbar-actions {
@@ -203,10 +231,10 @@
   gap: 7px;
   min-height: 36px;
   padding: 0 13px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 10px;
-  color: var(--text-normal);
-  background: var(--background-primary-alt);
+  color: var(--mypage-text, var(--text-normal));
+  background: var(--mypage-card-background, var(--background-primary-alt));
   font-weight: 600;
 }
 
@@ -219,18 +247,18 @@
   gap: 7px;
   min-height: 36px;
   padding: 0 13px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 10px;
-  color: var(--text-normal);
-  background: var(--background-primary-alt);
+  color: var(--mypage-text, var(--text-normal));
+  background: var(--mypage-card-background, var(--background-primary-alt));
   font-weight: 600;
   cursor: pointer;
 }
 
 .mypage-primary-button {
   color: var(--text-on-accent);
-  border-color: var(--interactive-accent);
-  background: var(--interactive-accent);
+  border-color: var(--mypage-accent, var(--interactive-accent));
+  background: var(--mypage-accent, var(--interactive-accent));
 }
 
 .mypage-secondary-button:hover,
@@ -257,13 +285,13 @@
 
 .mypage-permission-modal .mypage-permission-intro {
   padding: 12px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 10px;
   background: var(--background-secondary);
 }
 
 .mypage-muted {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-recovery-banner {
@@ -279,14 +307,14 @@
 }
 
 .mypage-recovery-banner small {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   word-break: break-word;
 }
 
 .mypage-edit-button:hover,
 .mypage-edit-button.is-active {
-  border-color: color-mix(in srgb, var(--interactive-accent) 55%, var(--background-modifier-border));
-  background: color-mix(in srgb, var(--interactive-accent) 13%, var(--background-primary-alt));
+  border-color: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 55%, var(--mypage-border, var(--background-modifier-border)));
+  background: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 13%, var(--mypage-card-background, var(--background-primary-alt)));
 }
 
 .mypage-tab:focus-visible,
@@ -299,12 +327,13 @@
 }
 
 .mypage-dashboard {
-  width: min(100%, 1600px);
+  width: 100%;
+  max-width: var(--mypage-content-max-width, none);
   min-height: calc(100% - 58px);
   margin: 0 auto;
-  padding: 28px 24px 48px;
+  padding: max(24px, var(--mypage-page-padding, 18px)) var(--mypage-page-padding, 18px) 48px;
   color: var(--mypage-text, var(--text-normal));
-  background-color: var(--mypage-background, transparent);
+  background: transparent;
 }
 
 .mypage-edit-strip {
@@ -316,9 +345,9 @@
   gap: 12px;
   min-height: 46px;
   padding: 6px 18px;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--background-modifier-border);
-  background: color-mix(in srgb, var(--interactive-accent) 8%, var(--background-primary));
+  color: var(--mypage-muted-text, var(--text-muted));
+  border-bottom: 1px solid var(--mypage-border, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 8%, var(--background-primary));
   backdrop-filter: blur(18px);
 }
 
@@ -330,7 +359,7 @@
 }
 
 .mypage-edit-strip > strong {
-  color: var(--text-normal);
+  color: var(--mypage-text, var(--text-normal));
   font-size: 12px;
 }
 
@@ -353,7 +382,7 @@
 .mypage-widget-group {
   margin: 18px 0;
   padding: 10px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: calc(var(--mypage-radius) + 4px);
   background: color-mix(in srgb, var(--background-secondary) 66%, transparent);
 }
@@ -377,7 +406,7 @@
 
 .mypage-widget-group-header > span {
   margin-right: auto;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   font-size: 12px;
 }
 
@@ -394,13 +423,13 @@
 .mypage-gallery-empty {
   grid-column: 1 / -1;
   padding: 28px 16px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   text-align: center;
 }
 
 .mypage-eyebrow,
 .mypage-dashboard-summary {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   font-size: 12px;
 }
 
@@ -445,6 +474,12 @@
   transition:
     border-color var(--mypage-transition),
     box-shadow var(--mypage-transition);
+}
+
+.mypage-widget-body {
+  width: calc(100% / var(--mypage-content-scale, 1));
+  height: calc((100% - 42px) / var(--mypage-content-scale, 1));
+  zoom: var(--mypage-content-scale, 1);
 }
 
 .mypage-grid > .grid-stack-item > .grid-stack-item-content.mypage-widget {
@@ -492,9 +527,9 @@
   align-items: center;
   gap: 16px;
   padding: 14px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 12px;
-  background: var(--background-primary-alt);
+  background: var(--mypage-card-background, var(--background-primary-alt));
 }
 
 .mypage-market-card h3,
@@ -505,7 +540,7 @@
 .mypage-market-card p,
 .mypage-market-card small,
 .mypage-market-empty {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-market-error {
@@ -515,7 +550,7 @@
 .mypage-market-cache-status {
   display: block;
   margin: 10px 0 2px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-update-notice {
@@ -524,7 +559,7 @@
 
 .mypage-update-notice p {
   margin: 7px 0 10px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-update-actions {
@@ -552,7 +587,7 @@
 
 .mypage-chart-summary {
   overflow: hidden;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -563,7 +598,7 @@
   justify-content: center;
   gap: 8px;
   min-height: 88px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   text-align: center;
 }
 
@@ -574,8 +609,8 @@
 .mypage-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid var(--background-modifier-border);
-  border-top-color: var(--interactive-accent);
+  border: 2px solid var(--mypage-border, var(--background-modifier-border));
+  border-top-color: var(--mypage-accent, var(--interactive-accent));
   border-radius: 50%;
   animation: mypage-spin 700ms linear infinite;
 }
@@ -599,7 +634,7 @@
 
 .mypage-metric > span {
   margin-top: 6px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   font-size: 12px;
 }
 
@@ -618,7 +653,7 @@
   flex: 1;
   min-width: 2px;
   border-radius: 3px 3px 1px 1px;
-  background: color-mix(in srgb, var(--interactive-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 62%, transparent);
 }
 
 .mypage-notes-list,
@@ -641,7 +676,7 @@
   min-height: 52px;
   min-width: 0;
   padding: 9px 10px;
-  color: var(--text-normal);
+  color: var(--mypage-text, var(--text-normal));
   border: 1px solid transparent;
   border-radius: 9px;
   background: transparent;
@@ -650,7 +685,7 @@
 }
 
 .mypage-notes-list button:hover {
-  border-color: var(--background-modifier-border);
+  border-color: var(--mypage-border, var(--background-modifier-border));
   background: var(--background-modifier-hover);
 }
 
@@ -673,7 +708,7 @@
 .mypage-notes-list time,
 .mypage-tasks-list small {
   overflow: hidden;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -684,9 +719,9 @@
   place-items: center;
   width: 30px;
   height: 30px;
-  color: var(--interactive-accent);
+  color: var(--mypage-accent, var(--interactive-accent));
   border-radius: 8px;
-  background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+  background: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 10%, transparent);
 }
 
 .mypage-tasks-list label {
@@ -704,7 +739,7 @@
 
 .mypage-tasks-list label.is-completed {
   order: 2;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   border: 1px solid color-mix(in srgb, var(--color-green) 24%, transparent);
   background: color-mix(in srgb, var(--color-green) 7%, transparent);
 }
@@ -716,7 +751,7 @@
 }
 
 .mypage-tasks-list label.is-completed small {
-  color: color-mix(in srgb, var(--color-green) 72%, var(--text-muted));
+  color: color-mix(in srgb, var(--color-green) 72%, var(--mypage-muted-text, var(--text-muted)));
 }
 
 .mypage-tasks-list input {
@@ -742,7 +777,7 @@
   justify-content: center;
   gap: 8px;
   min-height: 72px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   text-align: center;
 }
 
@@ -767,7 +802,7 @@
   color: var(--text-on-accent);
   border: 0;
   border-radius: 8px;
-  background: var(--interactive-accent);
+  background: var(--mypage-accent, var(--interactive-accent));
   cursor: pointer;
 }
 
@@ -802,11 +837,11 @@
 }
 
 .mypage-progress-ring .track {
-  stroke: var(--background-modifier-border);
+  stroke: var(--mypage-border, var(--background-modifier-border));
 }
 
 .mypage-progress-ring .value {
-  stroke: var(--interactive-accent);
+  stroke: var(--mypage-accent, var(--interactive-accent));
   stroke-linecap: round;
   transition: stroke-dashoffset 300ms ease-out;
 }
@@ -830,7 +865,7 @@
 
 .mypage-goal span,
 .mypage-goal small {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-markdown-actions {
@@ -854,15 +889,15 @@
   justify-content: center;
   gap: 7px;
   min-height: 34px;
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
+  color: var(--mypage-text, var(--text-normal));
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 9px;
-  background: var(--background-primary-alt);
+  background: var(--mypage-card-background, var(--background-primary-alt));
   cursor: pointer;
 }
 
 .mypage-widget:hover {
-  border-color: color-mix(in srgb, var(--interactive-accent) 32%, var(--background-modifier-border));
+  border-color: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 32%, var(--mypage-border, var(--background-modifier-border)));
   box-shadow: 0 12px 34px rgb(0 0 0 / 10%);
 }
 
@@ -872,8 +907,8 @@
 
 .mypage-shell.is-editing[data-grid-lines="true"] .mypage-grid {
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--background-modifier-border) 35%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--background-modifier-border) 35%, transparent) 1px, transparent 1px);
+    linear-gradient(to right, color-mix(in srgb, var(--mypage-border, var(--background-modifier-border)) 35%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--mypage-border, var(--background-modifier-border)) 35%, transparent) 1px, transparent 1px);
   background-size: calc(100% / 12) 100%, 100% 90px;
 }
 
@@ -887,6 +922,34 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.mypage-widget-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mypage-widget-heading > .mypage-icon {
+  width: calc(18px * var(--mypage-icon-scale, 1));
+  height: calc(18px * var(--mypage-icon-scale, 1));
+  color: var(--mypage-accent);
+}
+
+.mypage-button-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: grid;
+  place-items: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  color: white;
+  border-radius: 999px;
+  background: var(--mypage-accent);
+  font-size: 9px;
 }
 
 .mypage-widget-header h2 {
@@ -911,7 +974,7 @@
 }
 
 .mypage-metric-preview span {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   font-size: 12px;
 }
 
@@ -924,7 +987,7 @@
 .mypage-heatmap-preview span {
   aspect-ratio: 1;
   border-radius: 3px;
-  background: var(--interactive-accent);
+  background: var(--mypage-accent, var(--interactive-accent));
 }
 
 .mypage-trend-preview {
@@ -935,13 +998,13 @@
 
 .mypage-trend-preview path:not(.area) {
   fill: none;
-  stroke: var(--interactive-accent);
+  stroke: var(--mypage-accent, var(--interactive-accent));
   stroke-linecap: round;
   stroke-width: 3;
 }
 
 .mypage-trend-preview .area {
-  fill: color-mix(in srgb, var(--interactive-accent) 18%, transparent);
+  fill: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 18%, transparent);
 }
 
 .mypage-task-preview,
@@ -957,7 +1020,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   font-size: 12px;
 }
 
@@ -975,14 +1038,14 @@
   gap: 10px;
   min-width: 0;
   padding: 8px 0;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--mypage-border, var(--background-modifier-border));
 }
 
 .mypage-note-preview > div > span {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--interactive-accent);
+  background: var(--mypage-accent, var(--interactive-accent));
 }
 
 .mypage-note-preview strong {
@@ -1007,7 +1070,7 @@
   padding: 6px;
   border-radius: 9px;
   color: var(--text-on-accent);
-  background: var(--interactive-accent);
+  background: var(--mypage-accent, var(--interactive-accent));
 }
 
 .mypage-drag-handle {
@@ -1042,8 +1105,8 @@
   top: 8px;
   right: auto;
   left: 8px;
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
+  color: var(--mypage-text, var(--text-normal));
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   background: var(--background-primary);
   cursor: pointer;
 }
@@ -1054,7 +1117,7 @@
 
 button.mypage-overlay {
   position: fixed;
-  z-index: 90;
+  z-index: 9990;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -1069,7 +1132,7 @@ button.mypage-overlay {
 
 .mypage-gallery {
   position: fixed;
-  z-index: 100;
+  z-index: 10000;
   top: 0;
   right: 0;
   display: flex;
@@ -1080,7 +1143,7 @@ button.mypage-overlay {
   height: 100dvh;
   min-height: 0;
   padding: 18px;
-  border-left: 1px solid var(--background-modifier-border);
+  border-left: 1px solid var(--mypage-border, var(--background-modifier-border));
   background: var(--background-primary);
   box-shadow: -20px 0 50px rgb(0 0 0 / 20%);
 }
@@ -1105,9 +1168,9 @@ button.mypage-overlay {
   gap: 8px;
   margin: 18px 0 12px;
   padding: 0 11px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 10px;
-  background: var(--background-primary-alt);
+  background: var(--mypage-card-background, var(--background-primary-alt));
 }
 
 .mypage-search input {
@@ -1131,7 +1194,7 @@ button.mypage-overlay {
   flex: 0 0 auto;
   min-height: 34px;
   padding: 7px 10px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -1139,7 +1202,7 @@ button.mypage-overlay {
 }
 
 .mypage-source-tabs button[aria-selected="true"] {
-  color: var(--text-normal);
+  color: var(--mypage-text, var(--text-normal));
   background: var(--background-secondary-alt);
 }
 
@@ -1168,10 +1231,10 @@ button.mypage-overlay {
   padding: 14px;
   text-align: left;
   line-height: 1.35;
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
+  color: var(--mypage-text, var(--text-normal));
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 12px;
-  background: var(--background-primary-alt);
+  background: var(--mypage-card-background, var(--background-primary-alt));
   cursor: pointer;
   transition: border-color var(--mypage-transition), background-color var(--mypage-transition);
 }
@@ -1186,9 +1249,9 @@ button.mypage-overlay {
   place-items: center;
   width: 38px;
   height: 38px;
-  color: var(--interactive-accent);
+  color: var(--mypage-accent, var(--interactive-accent));
   border-radius: 11px;
-  background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+  background: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 12%, transparent);
 }
 
 .mypage-gallery-card > span:last-child {
@@ -1205,7 +1268,7 @@ button.mypage-overlay {
 }
 
 .mypage-gallery-card small {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   line-height: 1.4;
 }
 
@@ -1213,7 +1276,7 @@ button.mypage-overlay {
   width: max-content;
   margin-top: 3px;
   padding: 2px 6px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   border-radius: 5px;
   background: var(--background-secondary);
   font-size: 10px;
@@ -1236,7 +1299,7 @@ button.mypage-overlay {
   max-height: 100%;
   overflow: auto;
   padding: 30px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 22px;
   background: var(--background-primary);
   box-shadow: 0 30px 90px rgb(0 0 0 / 30%);
@@ -1250,7 +1313,7 @@ button.mypage-overlay {
   margin-bottom: 18px;
   color: var(--text-on-accent);
   border-radius: 15px;
-  background: var(--interactive-accent);
+  background: var(--mypage-accent, var(--interactive-accent));
 }
 
 .mypage-onboarding h1 {
@@ -1274,13 +1337,13 @@ button.mypage-overlay {
   display: flex;
   gap: 6px;
   padding: 2px 0 12px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--mypage-border, var(--background-modifier-border));
 }
 
 .mypage-config-tabs button {
   min-height: 36px;
   padding: 7px 12px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   border: 0;
   border-radius: 9px;
   background: transparent;
@@ -1288,13 +1351,13 @@ button.mypage-overlay {
 }
 
 .mypage-config-tabs button:hover {
-  color: var(--text-normal);
+  color: var(--mypage-text, var(--text-normal));
   background: var(--background-modifier-hover);
 }
 
 .mypage-config-tabs button.is-active {
   color: var(--text-on-accent);
-  background: var(--interactive-accent);
+  background: var(--mypage-accent, var(--interactive-accent));
 }
 
 .mypage-config-tabs button:focus-visible {
@@ -1312,7 +1375,7 @@ button.mypage-overlay {
 .mypage-config-intro,
 .mypage-config-empty {
   margin: 8px 0 4px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   font-size: 12px;
 }
 
@@ -1322,7 +1385,7 @@ button.mypage-overlay {
 
 .mypage-config-footer {
   padding: 8px 0 4px;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: 1px solid var(--mypage-border, var(--background-modifier-border));
   background: var(--background-primary);
 }
 
@@ -1331,7 +1394,7 @@ button.mypage-overlay {
 }
 
 .mypage-onboarding-intro {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   line-height: 1.6;
 }
 
@@ -1348,13 +1411,13 @@ button.mypage-overlay {
   gap: 10px;
   min-width: 0;
   padding: 13px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 12px;
-  background: var(--background-primary-alt);
+  background: var(--mypage-card-background, var(--background-primary-alt));
 }
 
 .mypage-onboarding-feature > .mypage-icon {
-  color: var(--interactive-accent);
+  color: var(--mypage-accent, var(--interactive-accent));
 }
 
 .mypage-onboarding-feature div {
@@ -1364,7 +1427,7 @@ button.mypage-overlay {
 
 .mypage-onboarding-feature small,
 .mypage-choice-row small {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   line-height: 1.35;
 }
 
@@ -1375,7 +1438,7 @@ button.mypage-overlay {
   gap: 18px;
   margin: 10px 0;
   padding: 13px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 12px;
 }
 
@@ -1420,7 +1483,7 @@ button.mypage-overlay {
   place-items: center;
   min-height: 320px;
   padding: 40px;
-  border: 1px dashed var(--background-modifier-border);
+  border: 1px dashed var(--mypage-border, var(--background-modifier-border));
   border-radius: var(--mypage-radius);
   text-align: center;
 }
@@ -1431,7 +1494,7 @@ button.mypage-overlay {
 }
 
 .mypage-empty-state p {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-settings {
@@ -1455,10 +1518,10 @@ button.mypage-overlay {
   justify-content: space-between;
   gap: 20px;
   padding: 18px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 16px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--interactive-accent) 12%, transparent), transparent 60%),
+    linear-gradient(135deg, color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 12%, transparent), transparent 60%),
     var(--background-secondary);
 }
 
@@ -1480,7 +1543,7 @@ button.mypage-overlay {
 .mypage-settings-section-intro p,
 .mypage-about-hero p {
   margin-top: 4px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-settings-logo,
@@ -1489,8 +1552,8 @@ button.mypage-overlay {
   flex: 0 0 auto;
   place-items: center;
   color: var(--text-on-accent);
-  background: var(--interactive-accent);
-  box-shadow: 0 10px 30px color-mix(in srgb, var(--interactive-accent) 28%, transparent);
+  background: var(--mypage-accent, var(--interactive-accent));
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 28%, transparent);
 }
 
 .mypage-settings-logo {
@@ -1507,7 +1570,7 @@ button.mypage-overlay {
   margin: 14px 0 18px;
   padding: 6px;
   overflow-x: auto;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 14px;
   background: color-mix(in srgb, var(--background-primary) 94%, transparent);
   backdrop-filter: blur(14px);
@@ -1521,7 +1584,7 @@ button.mypage-overlay {
   gap: 7px;
   min-height: 38px;
   padding: 8px 11px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   border: 0;
   border-radius: 9px;
   background: transparent;
@@ -1531,13 +1594,13 @@ button.mypage-overlay {
 }
 
 .mypage-settings-tabs button:hover {
-  color: var(--text-normal);
+  color: var(--mypage-text, var(--text-normal));
   background: var(--background-modifier-hover);
 }
 
 .mypage-settings-tabs button.is-active {
   color: var(--text-on-accent);
-  background: var(--interactive-accent);
+  background: var(--mypage-accent, var(--interactive-accent));
 }
 
 .mypage-settings-tabs svg {
@@ -1552,13 +1615,13 @@ button.mypage-overlay {
 .mypage-settings-section-intro {
   margin: 4px 0 14px;
   padding: 4px 2px 14px;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--mypage-border, var(--background-modifier-border));
 }
 
 .mypage-settings-panel > .setting-item:not(.setting-item-heading) {
   margin: 8px 0;
   padding: 14px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 12px;
   background: var(--background-secondary);
 }
@@ -1567,7 +1630,7 @@ button.mypage-overlay {
 .mypage-about-hero,
 .mypage-about-facts,
 .mypage-module-management-card {
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 14px;
   background: var(--background-secondary);
 }
@@ -1587,7 +1650,7 @@ button.mypage-overlay {
 .mypage-active-theme-card small {
   display: block;
   margin-top: 5px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-market-toolbar {
@@ -1629,13 +1692,13 @@ button.mypage-overlay {
   min-width: 0;
   white-space: normal;
   padding: 12px;
-  color: var(--text-normal);
+  color: var(--mypage-text, var(--text-normal));
   text-align: left;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 12px;
   background: var(--background-secondary);
   box-shadow: none;
-  cursor: pointer;
+  cursor: default;
   transition: border-color 160ms ease, background-color 160ms ease;
 }
 
@@ -1643,7 +1706,7 @@ button.mypage-overlay {
 .mypage-module-market-card:hover,
 .mypage-theme-card.is-selected,
 .mypage-module-market-card.is-selected {
-  border-color: var(--interactive-accent);
+  border-color: var(--mypage-accent, var(--interactive-accent));
   background: var(--background-modifier-hover);
 }
 
@@ -1668,7 +1731,7 @@ button.mypage-overlay {
 .mypage-theme-card small,
 .mypage-module-market-card p,
 .mypage-module-market-card small {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-theme-card span,
@@ -1684,6 +1747,83 @@ button.mypage-overlay {
   min-height: 112px;
 }
 
+.mypage-card-detail-button {
+  grid-column: 1 / -1;
+  justify-self: end;
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
+  border-radius: 8px;
+  color: var(--mypage-text, var(--text-normal));
+  background: var(--background-primary);
+  cursor: pointer;
+}
+
+.mypage-card-detail-button:hover {
+  border-color: var(--mypage-accent, var(--interactive-accent));
+}
+
+.mypage-installed-badge,
+.mypage-market-dialog-status > span {
+  display: inline-flex !important;
+  align-items: center;
+  width: max-content;
+  padding: 3px 8px;
+  color: var(--color-green) !important;
+  border: 1px solid color-mix(in srgb, var(--color-green) 42%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-green) 10%, transparent);
+  font-size: 11px;
+}
+
+.mypage-market-details-modal {
+  width: min(92vw, 760px);
+}
+
+.mypage-market-dialog-description {
+  color: var(--mypage-muted-text, var(--text-muted));
+  line-height: 1.55;
+}
+
+.mypage-market-dialog-meta {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 7px 16px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
+  border-radius: 12px;
+  background: var(--background-secondary);
+}
+
+.mypage-market-dialog-meta dt {
+  color: var(--mypage-muted-text, var(--text-muted));
+}
+
+.mypage-market-dialog-meta dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.mypage-market-dialog-readme {
+  max-height: min(48vh, 520px);
+  margin: 14px 0;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
+  border-radius: 12px;
+}
+
+.mypage-market-details-modal .mypage-market-detail-actions {
+  position: sticky;
+  bottom: 0;
+  justify-content: end;
+  padding: 12px 0 2px;
+  border-top: 1px solid var(--mypage-border, var(--background-modifier-border));
+  background: var(--background-primary);
+}
+
 .mypage-module-market-card p {
   display: -webkit-box;
   margin: 5px 0;
@@ -1697,9 +1837,9 @@ button.mypage-overlay {
   place-items: center;
   width: 42px;
   height: 42px;
-  color: var(--interactive-accent);
+  color: var(--mypage-accent, var(--interactive-accent));
   border-radius: 11px;
-  background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+  background: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 12%, transparent);
 }
 
 .mypage-market-detail {
@@ -1707,7 +1847,7 @@ button.mypage-overlay {
   top: 72px;
   min-height: 180px;
   padding: 16px;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 14px;
   background: var(--background-secondary);
 }
@@ -1720,7 +1860,7 @@ button.mypage-overlay {
   display: grid;
   gap: 6px;
   margin: 14px 0;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   font-size: 12px;
 }
 
@@ -1747,8 +1887,8 @@ button.mypage-overlay {
 .mypage-market-empty {
   margin: 12px 0;
   padding: 12px;
-  color: var(--text-muted);
-  border: 1px dashed var(--background-modifier-border);
+  color: var(--mypage-muted-text, var(--text-muted));
+  border: 1px dashed var(--mypage-border, var(--background-modifier-border));
   border-radius: 10px;
 }
 
@@ -1769,7 +1909,7 @@ button.mypage-overlay {
 .mypage-module-management-card small {
   display: block;
   margin-top: 4px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-module-management-actions {
@@ -1803,9 +1943,9 @@ button.mypage-overlay {
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
-  color: var(--text-normal);
+  color: var(--mypage-text, var(--text-normal));
   text-decoration: none;
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
   border-radius: 9px;
 }
 
@@ -1825,7 +1965,7 @@ button.mypage-overlay {
 }
 
 .mypage-about-facts small {
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-dialog-modal {
@@ -1838,7 +1978,7 @@ button.mypage-overlay {
 
 .mypage-dialog-message {
   margin: 8px 0 16px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
   line-height: 1.6;
   white-space: pre-line;
 }
@@ -1857,7 +1997,7 @@ textarea.mypage-dialog-input {
 .mypage-dialog-actions {
   margin-top: 16px;
   padding-top: 10px;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: 1px solid var(--mypage-border, var(--background-modifier-border));
 }
 
 .mypage-dialog-actions .setting-item {
@@ -1888,9 +2028,9 @@ select.has-error {
 .mypage-permission-scope-editor {
   margin: -1px 0 12px;
   padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--interactive-accent) 38%, var(--background-modifier-border));
+  border: 1px solid color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 38%, var(--mypage-border, var(--background-modifier-border)));
   border-radius: 0 0 12px 12px;
-  background: color-mix(in srgb, var(--interactive-accent) 7%, var(--background-secondary));
+  background: color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 7%, var(--background-secondary));
 }
 
 .mypage-permission-scope-editor label {
@@ -1908,7 +2048,7 @@ select.has-error {
 .mypage-field-help {
   display: block;
   margin-top: 6px;
-  color: var(--text-muted);
+  color: var(--mypage-muted-text, var(--text-muted));
 }
 
 .mypage-permission-scope-actions {
@@ -1920,8 +2060,8 @@ select.has-error {
 
 .mypage-config-hint {
   padding: 10px 12px;
-  color: var(--text-muted);
-  border-left: 3px solid var(--interactive-accent);
+  color: var(--mypage-muted-text, var(--text-muted));
+  border-left: 3px solid var(--mypage-accent, var(--interactive-accent));
   border-radius: 0 8px 8px 0;
   background: var(--background-secondary);
 }

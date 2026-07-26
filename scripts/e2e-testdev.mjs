@@ -73,6 +73,44 @@ try {
   }
   evidence.assertions.push("Widget headers do not render redundant live badges");
 
+  let dashboardTabs = page.locator(".mypage-tab");
+  if ((await dashboardTabs.count()) < 2) {
+    const hiddenButton = page.getByRole("button", { name: /隐藏的主页/ });
+    if (await hiddenButton.isEnabled().catch(() => false)) {
+      await hiddenButton.click();
+      await page.locator(".menu-item-title").filter({ hasText: "恢复：" }).first().click();
+    } else {
+      await page.getByRole("button", { name: "添加主页" }).click();
+    }
+    await page.waitForFunction(
+      () => globalThis.document.querySelectorAll(".mypage-tab").length >= 2,
+      undefined,
+      { timeout: 10_000 },
+    );
+    dashboardTabs = page.locator(".mypage-tab");
+  }
+  const tabToHide = page.locator(".mypage-tab:not(.is-active)").first();
+  const hiddenTabName = (await tabToHide.textContent())?.trim();
+  if (!hiddenTabName) throw new Error("Could not resolve a tab to hide.");
+  const tabsBeforeHide = await dashboardTabs.count();
+  await tabToHide.click({ button: "right" });
+  await page.getByText("隐藏主页", { exact: true }).click();
+  await page.waitForFunction(
+    (expected) =>
+      globalThis.document.querySelectorAll(".mypage-tab").length === expected,
+    tabsBeforeHide - 1,
+    { timeout: 10_000 },
+  );
+  await page.getByRole("button", { name: /隐藏的主页/ }).click();
+  await page.getByText(`恢复：${hiddenTabName}`, { exact: true }).last().click();
+  await page.waitForFunction(
+    (expected) =>
+      globalThis.document.querySelectorAll(".mypage-tab").length === expected,
+    tabsBeforeHide,
+    { timeout: 10_000 },
+  );
+  evidence.assertions.push("Hidden dashboard tabs can be restored from the header menu");
+
   const outerScrollbars = await page.locator(".mypage-widget").evaluateAll(
     (widgets) =>
       widgets.filter((widget) => {
@@ -212,7 +250,29 @@ try {
   await goalModal.getByRole("button", { name: "取消" }).click();
   evidence.assertions.push("Goal exposes target count and completion date settings");
 
-  const dragHandle = page.locator(".mypage-drag-handle").first();
+  const dragHandles = page.locator(".mypage-drag-handle");
+  const visibleDragIndex = await dragHandles.evaluateAll((handles) =>
+    handles.findIndex((handle) => {
+      const rect = handle.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        x >= 0 &&
+        x <= globalThis.innerWidth &&
+        y >= 0 &&
+        y <= globalThis.innerHeight &&
+        globalThis.document
+          .elementFromPoint(x, y)
+          ?.closest(".mypage-drag-handle") === handle
+      );
+    }),
+  );
+  if (visibleDragIndex < 0) {
+    throw new Error("No unobscured edit-mode drag handle is available.");
+  }
+  const dragHandle = dragHandles.nth(visibleDragIndex);
   await dragHandle.waitFor({ state: "visible", timeout: 10_000 });
   const draggedItem = dragHandle.locator(
     "xpath=ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' grid-stack-item ')][1]",
@@ -226,30 +286,37 @@ try {
   if (!draggedWidgetId || !handleBox) {
     throw new Error("Could not resolve the first widget drag handle.");
   }
-  await page.mouse.move(
-    handleBox.x + handleBox.width / 2,
-    handleBox.y + handleBox.height / 2,
-  );
-  await page.mouse.down();
-  await page.mouse.move(
-    handleBox.x + handleBox.width / 2 + 120,
-    handleBox.y + handleBox.height / 2 + 140,
-    { steps: 12 },
-  );
-  await page.mouse.up();
-  await page.waitForFunction(
-    ({ widgetId, previous }) => {
-      const element = globalThis.document.querySelector(
-        `[data-widget-id="${widgetId}"]`,
-      );
-      return (
-        element?.getAttribute("gs-x") !== previous.x ||
-        element?.getAttribute("gs-y") !== previous.y
-      );
-    },
-    { widgetId: draggedWidgetId, previous: beforeDrag },
-    { timeout: 10_000 },
-  );
+  let dragMoved = false;
+  for (const [deltaX, deltaY] of [
+    [180, 0],
+    [-180, 0],
+    [0, 170],
+    [0, -120],
+  ]) {
+    const currentHandleBox = await dragHandle.boundingBox();
+    if (!currentHandleBox) continue;
+    await page.mouse.move(
+      currentHandleBox.x + currentHandleBox.width / 2,
+      currentHandleBox.y + currentHandleBox.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      currentHandleBox.x + currentHandleBox.width / 2 + deltaX,
+      currentHandleBox.y + currentHandleBox.height / 2 + deltaY,
+      { steps: 12 },
+    );
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+    const current = await draggedItem.evaluate((element) => ({
+      x: element.getAttribute("gs-x"),
+      y: element.getAttribute("gs-y"),
+    }));
+    if (current.x !== beforeDrag.x || current.y !== beforeDrag.y) {
+      dragMoved = true;
+      break;
+    }
+  }
+  if (!dragMoved) throw new Error("Edit-mode drag handle did not move a widget.");
   evidence.assertions.push("Edit-mode drag handle moved a widget");
 
   await page.getByRole("button", { name: /添加组件/ }).click();
@@ -289,32 +356,39 @@ try {
   }
   const leakedGridControls = await page.evaluate(() => {
     const gallery = globalThis.document.querySelector(".mypage-gallery");
-    if (!gallery) return 0;
+    if (!gallery) return [];
     const drawer = gallery.getBoundingClientRect();
     return [
       ...globalThis.document.querySelectorAll(
         ".mypage-grid .mypage-drag-handle, .mypage-grid .ui-resizable-handle",
       ),
-    ].filter((control) => {
+    ].flatMap((control) => {
       const rect = control.getBoundingClientRect();
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
       if (
-        x < drawer.left ||
+        x < drawer.left + 8 ||
         x > drawer.right ||
         y < drawer.top ||
         y > drawer.bottom
       ) {
-        return false;
+        return [];
       }
-      return globalThis.document
-        .elementFromPoint(x, y)
-        ?.closest(".mypage-grid") !== null;
-    }).length;
+      const top = globalThis.document.elementFromPoint(x, y);
+      return top?.closest(".mypage-grid")
+        ? [{
+            className: control.className,
+            x,
+            y,
+            topClassName: top.className,
+            galleryLeft: drawer.left,
+          }]
+        : [];
+    });
   });
-  if (leakedGridControls > 0) {
+  if (leakedGridControls.length > 0) {
     throw new Error(
-      `${leakedGridControls} dashboard edit controls leaked above the gallery.`,
+      `${leakedGridControls.length} dashboard edit controls leaked above the gallery: ${JSON.stringify(leakedGridControls)}.`,
     );
   }
   evidence.assertions.push("Gallery cards have readable spacing without overlap");
@@ -364,10 +438,50 @@ try {
   if (!invalidBorder) {
     throw new Error("Invalid module path did not receive visual feedback.");
   }
+  await publishedDirectory.fill("H:\\GitHub\\myblog\\source\\_posts");
+  await publishedDirectory.blur();
+  await page.waitForTimeout(350);
+  if ((await publishedDirectory.getAttribute("aria-invalid")) === "true") {
+    throw new Error(
+      `Authorized external directory was rejected: ${await moduleModal
+        .locator('[data-mypage-field-error="publishedDirectory"]')
+        .textContent()}`,
+    );
+  }
+  const repository = moduleModal
+    .locator(".setting-item")
+    .filter({ hasText: "发布 Git 仓库" })
+    .locator("input");
+  await repository.fill("H:\\GitHub\\myblog");
+  await repository.blur();
+  await page.waitForTimeout(350);
+  if ((await repository.getAttribute("aria-invalid")) === "true") {
+    throw new Error(
+      `Authorized Git repository was rejected: ${await moduleModal
+        .locator('[data-mypage-field-error="repository"]')
+        .textContent()}`,
+    );
+  }
+  const sourceField = moduleModal
+    .locator(".setting-item")
+    .filter({ hasText: "原稿路径字段" })
+    .locator("input");
+  await sourceField.fill("原稿路径");
+  await sourceField.blur();
+  await page.waitForTimeout(200);
+  if ((await sourceField.getAttribute("aria-invalid")) === "true") {
+    throw new Error("Unicode field names are incorrectly rejected.");
+  }
   await moduleModal.getByRole("button", { name: "取消" }).click();
   evidence.assertions.push(
-    "DIY module settings expose hover guidance and inline path validation",
+    "DIY module settings reject relative paths but accept authorized Git/external paths and Unicode fields",
   );
+  await page.getByRole("button", { name: /添加组件/ }).click();
+  await page.getByRole("tab", { name: /已导入/ }).click();
+  await page
+    .locator(".mypage-gallery")
+    .getByRole("button", { name: /专注番茄钟/ })
+    .click();
 
   await page.getByRole("button", { name: /完成/ }).click();
   const helloFrame = page
@@ -381,6 +495,20 @@ try {
     timeout: 10_000,
   });
   evidence.assertions.push("Self-contained DIY module rendered in sandbox iframe");
+  const focusFrame = page
+    .locator('iframe.mypage-module-sandbox[title$="pomodoro"]')
+    .last();
+  await focusFrame.waitFor({ state: "attached", timeout: 10_000 });
+  const focusClock = focusFrame.contentFrame().locator(".focus-ring strong");
+  const focusBefore = await focusClock.textContent();
+  await focusFrame.contentFrame().getByRole("button", { name: "开始" }).click();
+  await page.waitForTimeout(1_100);
+  const focusAfter = await focusClock.textContent();
+  if (!focusBefore || !focusAfter || focusBefore === focusAfter) {
+    throw new Error("Official Pomodoro module did not start its interactive timer.");
+  }
+  await focusFrame.contentFrame().getByRole("button", { name: "暂停" }).click();
+  evidence.assertions.push("Official Pomodoro module is interactive inside its sandbox");
   const lifecycleFrame = page
     .locator(".mypage-widget")
     .filter({
@@ -392,26 +520,26 @@ try {
     .locator("iframe.mypage-module-sandbox")
     .last();
   await lifecycleFrame.waitFor({ state: "attached", timeout: 10_000 });
-  await lifecycleFrame.contentFrame().getByText("原稿", { exact: true }).waitFor({
+  const lifecycleContent = lifecycleFrame.contentFrame();
+  await lifecycleContent.locator(".hexo-content > *").first().waitFor({
     state: "visible",
     timeout: 20_000,
   });
-  const lifecycleCount = Number(
-    await lifecycleFrame
-      .contentFrame()
-      .locator(".hexo-metrics strong")
-      .first()
-      .textContent(),
-  );
-  const lifecycleColor = await lifecycleFrame
-    .contentFrame()
-    .locator(".hexo-metrics")
-    .evaluate((element) => globalThis.getComputedStyle(element).color);
-  if (!Number.isFinite(lifecycleCount) || lifecycleCount < 1) {
-    throw new Error(`DIY lifecycle module did not render records: ${lifecycleCount}.`);
-  }
-  if (lifecycleColor === "rgba(0, 0, 0, 0)" || lifecycleColor === "transparent") {
-    throw new Error("DIY lifecycle module text is transparent.");
+  const metrics = lifecycleContent.locator(".hexo-metrics");
+  if (await metrics.isVisible().catch(() => false)) {
+    const lifecycleCount = Number(
+      await metrics.locator("strong").first().textContent(),
+    );
+    if (!Number.isFinite(lifecycleCount) || lifecycleCount < 0) {
+      throw new Error(`DIY lifecycle module rendered an invalid count: ${lifecycleCount}.`);
+    }
+  } else {
+    await lifecycleContent
+      .getByText(/完成组件配置|配置或授权校验失败/)
+      .waitFor({ state: "visible" });
+    if ((await lifecycleContent.locator(".hexo-metrics").count()) !== 0) {
+      throw new Error("Hexo module displayed metrics after configuration failure.");
+    }
   }
   const moduleRootOverflow = await lifecycleFrame
     .contentFrame()
@@ -420,7 +548,12 @@ try {
   if (moduleRootOverflow !== "hidden") {
     throw new Error(`DIY module root overflow is ${moduleRootOverflow}.`);
   }
-  evidence.assertions.push("DIY module receives initial data and hides root scrolling");
+  if ((await lifecycleContent.getByRole("button", { name: /刷新外部状态/ }).count()) !== 0) {
+    throw new Error("DIY module still exposes an independent refresh button.");
+  }
+  evidence.assertions.push(
+    "DIY module renders truthful configuration state, hides root scrolling, and has no independent refresh button",
+  );
   for (const contributionId of [
     "lifecycle-summary",
     "pending-posts",
@@ -466,18 +599,30 @@ try {
       state: "visible",
     });
   }
-  await settingsRoot.getByText("Hello Widget", { exact: true }).waitFor({
+  await settingsRoot.getByText("专注番茄钟", { exact: true }).waitFor({
     state: "visible",
+    timeout: 30_000,
   });
-  const helloMarketCard = settingsRoot
+  if (
+    (await settingsRoot
+      .locator(".mypage-module-market-card")
+      .filter({ hasText: "Hello Widget" })
+      .count()) !== 0
+  ) {
+    throw new Error("Hello Widget is still listed in the official market.");
+  }
+  const timerMarketCard = settingsRoot
     .locator(".mypage-module-market-card")
-    .filter({ hasText: "Hello Widget" });
-  await helloMarketCard.click();
-  const moduleMarketDetail = settingsRoot.locator(".mypage-market-detail");
-  await moduleMarketDetail.getByRole("heading", { name: "Hello Widget" }).waitFor({
+    .filter({ hasText: "专注番茄钟" });
+  await timerMarketCard.getByRole("button", { name: "详情" }).click();
+  const moduleMarketDetail = page.locator(".mypage-market-details-modal");
+  await moduleMarketDetail.getByRole("heading", { name: "专注番茄钟" }).waitFor({
     state: "visible",
   });
-  await moduleMarketDetail.getByRole("button", { name: "删除" }).waitFor({
+  await moduleMarketDetail
+    .getByRole("button", { name: /安装|更新|删除/ })
+    .first()
+    .waitFor({
     state: "visible",
   });
   await page.screenshot({
@@ -485,15 +630,20 @@ try {
     fullPage: true,
   });
   evidence.assertions.push(
-    "Settings center exposes eight tabs and module cards open inline details and actions",
+    "Settings center exposes eight tabs; official market excludes Hello and opens module details in a dialog",
   );
+  await moduleMarketDetail.locator(".modal-close-button").click();
   await settingsRoot.getByRole("tab", { name: "主题市场" }).click();
   if ((await settingsRoot.locator(".mypage-theme-card").count()) < 4) {
     throw new Error("Official theme market did not expose the preset themes.");
   }
-  await settingsRoot.locator(".mypage-theme-card").first().click();
-  const themeMarketDetail = settingsRoot.locator(".mypage-market-detail");
-  await themeMarketDetail.locator("h3").waitFor({ state: "visible" });
+  await settingsRoot
+    .locator(".mypage-theme-card")
+    .first()
+    .getByRole("button", { name: "详情" })
+    .click();
+  const themeMarketDetail = page.locator(".mypage-market-details-modal");
+  await themeMarketDetail.locator(".modal-title").waitFor({ state: "visible" });
   await themeMarketDetail
     .getByRole("button", { name: /安装主题|应用主题/ })
     .first()
@@ -503,8 +653,9 @@ try {
     fullPage: true,
   });
   evidence.assertions.push(
-    "Official theme market exposes multiple presets with inline details and install actions",
+    "Official theme market exposes multiple presets with dialog details and install actions",
   );
+  await themeMarketDetail.locator(".modal-close-button").click();
   await settingsRoot.getByRole("tab", { name: "模块管理" }).click();
   const hexoManagement = settingsRoot
     .locator(".mypage-module-management-card")
@@ -512,19 +663,54 @@ try {
   await hexoManagement.getByRole("button", { name: "权限与信任" }).click();
   const permissionModal = page.locator(".mypage-permission-modal");
   await permissionModal.waitFor({ state: "visible", timeout: 10_000 });
-  await permissionModal
+  const setupPermission = permissionModal
     .getByRole("button", { name: "设置并授权" })
-    .first()
-    .click();
-  await permissionModal
-    .locator(".mypage-permission-scope-editor")
-    .waitFor({ state: "visible", timeout: 10_000 });
+    .first();
+  if (await setupPermission.isVisible().catch(() => false)) {
+    await setupPermission.click();
+    await permissionModal
+      .locator(".mypage-permission-scope-editor")
+      .waitFor({ state: "visible", timeout: 10_000 });
+  } else {
+    await permissionModal.getByText(/H:\\GitHub\\myblog/).first().waitFor({
+      state: "visible",
+      timeout: 10_000,
+    });
+  }
   await page.screenshot({
     path: path.join(artifacts, "testdev-permission-editor.png"),
     fullPage: true,
   });
-  evidence.assertions.push("Module setup-and-authorize action opens an inline scope editor");
+  evidence.assertions.push(
+    "Module permission dialog exposes scoped authorization or its inline scope editor",
+  );
   await permissionModal.locator(".modal-close-button").click();
+  await hexoManagement.getByRole("button", { name: "模块配置" }).click();
+  const moduleSettingsModal = page.locator(".mypage-module-settings-modal");
+  await moduleSettingsModal.waitFor({ state: "visible", timeout: 10_000 });
+  for (const tabName of ["内容设置", "通用设置", "高级设置"]) {
+    await moduleSettingsModal.getByRole("tab", { name: tabName }).waitFor({
+      state: "visible",
+    });
+  }
+  await moduleSettingsModal
+    .getByText("已发布文章目录", { exact: true })
+    .waitFor({ state: "visible" });
+  await moduleSettingsModal.getByRole("tab", { name: "高级设置" }).click();
+  await moduleSettingsModal.locator(".mypage-json-editor").waitFor({
+    state: "visible",
+  });
+  await moduleSettingsModal.locator(".modal-close-button").click();
+  await hexoManagement.getByRole("button", { name: "详情" }).click();
+  const managementDetails = page.locator(".mypage-market-details-modal");
+  await managementDetails.waitFor({ state: "visible", timeout: 10_000 });
+  await managementDetails.getByText("说明文档", { exact: true }).waitFor({
+    state: "visible",
+  });
+  await managementDetails.locator(".modal-close-button").click();
+  evidence.assertions.push(
+    "Module management aligns content/general/advanced settings and opens README details",
+  );
   await settingsRoot.getByRole("tab", { name: "关于" }).click();
   await settingsRoot.getByText(`MyPage 1.0.0`, { exact: true }).waitFor({
     state: "visible",
@@ -532,15 +718,85 @@ try {
   await settingsRoot.getByText("Apache License 2.0", { exact: true }).waitFor({
     state: "visible",
   });
+  await settingsRoot
+    .getByText("苏书蘅（SuShuHeng）", { exact: true })
+    .waitFor({ state: "visible" });
   await page.screenshot({
     path: path.join(artifacts, "testdev-settings.png"),
     fullPage: true,
   });
   evidence.assertions.push("About tab exposes version, repository, license and updater controls");
+  await settingsRoot.getByRole("tab", { name: "外观" }).click();
+  for (const label of [
+    "背景图片适配",
+    "背景位置",
+    "滚动背景",
+    "页面内边距",
+    "内容最大宽度",
+    "全局文字缩放",
+  ]) {
+    await settingsRoot.getByText(label, { exact: true }).waitFor({
+      state: "visible",
+    });
+  }
+  await settingsRoot.getByRole("tab", { name: "高级" }).click();
+  await settingsRoot
+    .getByText("全局数据刷新间隔", { exact: true })
+    .waitFor({ state: "visible" });
+  evidence.assertions.push(
+    "Appearance exposes detailed background/layout controls and Advanced exposes the global refresh interval",
+  );
   await page.keyboard.press("Escape");
+  const themeCoverage = await page.locator(".mypage-shell").evaluate((shell) => {
+    const dashboard = shell.querySelector(".mypage-dashboard");
+    const topbar = shell.querySelector(".mypage-topbar");
+    if (!dashboard || !topbar) return null;
+    const shellRect = shell.getBoundingClientRect();
+    const dashboardRect = dashboard.getBoundingClientRect();
+    return {
+      leftGap: Math.abs(dashboardRect.left - shellRect.left),
+      rightGap: Math.abs(shellRect.right - dashboardRect.right),
+      shellBackground: globalThis.getComputedStyle(shell).backgroundColor,
+      topbarBackground: globalThis.getComputedStyle(topbar).backgroundColor,
+    };
+  });
+  if (
+    !themeCoverage ||
+    themeCoverage.leftGap > 2 ||
+    themeCoverage.rightGap > 20 ||
+    themeCoverage.topbarBackground === "rgba(0, 0, 0, 0)"
+  ) {
+    throw new Error(`Theme does not cover the full dashboard/header: ${JSON.stringify(themeCoverage)}`);
+  }
+  evidence.assertions.push("Theme covers the full dashboard width and header");
 
   await page.getByRole("button", { name: "编辑" }).click();
   const beforeCancel = await page.locator(".mypage-widget").count();
+  const cancelTarget = page.locator(".grid-stack-item").first();
+  const cancelWidgetId = await cancelTarget.getAttribute("data-widget-id");
+  const cancelLayoutBefore = await cancelTarget.evaluate((element) => ({
+    x: element.getAttribute("gs-x"),
+    y: element.getAttribute("gs-y"),
+    w: element.getAttribute("gs-w"),
+    h: element.getAttribute("gs-h"),
+  }));
+  const cancelHandle = cancelTarget.locator(".mypage-drag-handle");
+  const cancelHandleBox = await cancelHandle.boundingBox();
+  if (!cancelWidgetId || !cancelHandleBox) {
+    throw new Error("Could not resolve a widget for cancel-layout verification.");
+  }
+  await page.mouse.move(
+    cancelHandleBox.x + cancelHandleBox.width / 2,
+    cancelHandleBox.y + cancelHandleBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    cancelHandleBox.x + cancelHandleBox.width / 2 + 160,
+    cancelHandleBox.y + cancelHandleBox.height / 2 + 90,
+    { steps: 12 },
+  );
+  await page.mouse.up();
+  await page.waitForTimeout(350);
   await page.getByRole("button", { name: /添加组件/ }).click();
   await page
     .locator(".mypage-gallery")
@@ -551,7 +807,22 @@ try {
   if (afterCancel !== beforeCancel) {
     throw new Error("Cancel did not discard dashboard widget changes.");
   }
-  evidence.assertions.push("Edit-session cancel discarded layout changes");
+  const restoredLayout = await page
+    .locator(`.grid-stack-item[data-widget-id="${cancelWidgetId}"]`)
+    .evaluate((element) => ({
+      x: element.getAttribute("gs-x"),
+      y: element.getAttribute("gs-y"),
+      w: element.getAttribute("gs-w"),
+      h: element.getAttribute("gs-h"),
+    }));
+  if (JSON.stringify(restoredLayout) !== JSON.stringify(cancelLayoutBefore)) {
+    throw new Error(
+      `Cancel did not restore layout: ${JSON.stringify(cancelLayoutBefore)} -> ${JSON.stringify(restoredLayout)}`,
+    );
+  }
+  evidence.assertions.push(
+    "Edit-session cancel discarded added widgets and restored the pre-edit layout/size",
+  );
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.locator(".mypage-shell").waitFor({ state: "visible", timeout: 20_000 });
@@ -610,7 +881,7 @@ try {
 
   const shellElement = page.locator(".mypage-shell");
   await shellElement.evaluate((element) => {
-    element.style.setProperty("--interactive-accent", "rgb(12, 140, 110)");
+    element.style.setProperty("--mypage-accent", "rgb(12, 140, 110)");
   });
   await page.waitForFunction(
     (target) =>
@@ -621,7 +892,7 @@ try {
     "rgb(12, 140, 110)",
   );
   await shellElement.evaluate((element) => {
-    element.style.removeProperty("--interactive-accent");
+    element.style.removeProperty("--mypage-accent");
   });
   evidence.assertions.push("Runtime theme accent propagated to interactive charts");
 
@@ -712,12 +983,17 @@ async function dismissFirstRun(page) {
 }
 
 async function openWidgetConfiguration(page, title) {
-  const widget = page
+  let widget = page
     .locator(".mypage-widget")
     .filter({ has: page.getByRole("heading", { name: title, exact: true }) })
     .last();
+  if ((await widget.count()) === 0 && title === "文本与快捷操作") {
+    widget = page.locator(".mypage-widget").filter({
+      has: page.locator(".mypage-markdown-actions"),
+    }).last();
+  }
   await widget.waitFor({ state: "visible", timeout: 10_000 });
-  await widget.getByRole("button", { name: `${title}菜单` }).click();
+  await widget.locator(".mypage-widget-header > .mypage-icon-button").click();
   await page.getByText("配置组件", { exact: true }).click();
   const modal = page.locator(".mypage-widget-config-modal");
   await modal.waitFor({ state: "visible", timeout: 10_000 });

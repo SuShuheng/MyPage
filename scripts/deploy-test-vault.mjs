@@ -12,6 +12,10 @@ await cp(path.resolve("diy-plugins"), path.join(target, "diy-plugins"), {
   recursive: true,
   force: true,
 });
+await cp(path.resolve("assets"), path.join(target, "assets"), {
+  recursive: true,
+  force: true,
+});
 const enabledPath = path.join(vault, ".obsidian", "community-plugins.json");
 let enabled = [];
 try {

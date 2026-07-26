@@ -27,7 +27,13 @@ export function DistributionWidget({ dataEngine, binding, widget }: BuiltInWidge
       ? {
           color: chartPalette(),
           tooltip: { trigger: "item" },
-          legend: { bottom: 0, type: "scroll", textStyle: { color: "var(--text-muted)" } },
+          legend: {
+            show: widget.config.showXAxisLabels !== false,
+            bottom: 0,
+            type: "scroll",
+            formatter: labelFormatter(widget.config),
+            textStyle: { color: "var(--mypage-muted-text)" },
+          },
           series: [{
             type: "pie",
             radius: String(widget.config.mode) === "donut" ? ["38%", "68%"] : "68%",
@@ -38,23 +44,29 @@ export function DistributionWidget({ dataEngine, binding, widget }: BuiltInWidge
           }],
         }
       : {
-          color: ["var(--interactive-accent)"],
+          color: ["var(--mypage-accent)"],
           tooltip: { trigger: "axis" },
           grid: { top: 8, right: 10, bottom: 30, left: 34 },
           xAxis: {
             type: "category",
             data: data.map(([name]) => name),
-            axisLabel: { color: "var(--text-muted)", interval: 0, rotate: data.length > 6 ? 28 : 0 },
+            axisLabel: {
+              show: widget.config.showXAxisLabels !== false,
+              color: "var(--mypage-muted-text)",
+              interval: 0,
+              rotate: data.length > 6 ? 28 : 0,
+              formatter: labelFormatter(widget.config),
+            },
           },
           yAxis: {
             type: "value",
             minInterval: 1,
-            axisLabel: { color: "var(--text-muted)" },
-            splitLine: { lineStyle: { color: "var(--background-modifier-border)" } },
+            axisLabel: { show: widget.config.showYAxisLabels !== false, color: "var(--mypage-muted-text)" },
+            splitLine: { lineStyle: { color: "var(--mypage-border)" } },
           },
           series: [{ type: "bar", data: data.map(([, value]) => value), barMaxWidth: 36 }],
         };
-  }, [state, widget.config.field, widget.config.mode]);
+  }, [state, widget.config]);
   if (state.status === "loading") return <WidgetLoading />;
   if (state.status === "error") return <WidgetError message={state.message} />;
   if (state.status === "empty") return <WidgetEmpty />;
@@ -68,11 +80,18 @@ export function DistributionWidget({ dataEngine, binding, widget }: BuiltInWidge
 
 function chartPalette(): string[] {
   return [
-    "var(--interactive-accent)",
-    "var(--color-green)",
-    "var(--color-orange)",
-    "var(--color-purple)",
-    "var(--color-cyan)",
-    "var(--color-red)",
+    "var(--mypage-accent)",
+    "color-mix(in srgb, var(--mypage-accent) 70%, #22c55e)",
+    "color-mix(in srgb, var(--mypage-accent) 45%, #f59e0b)",
+    "color-mix(in srgb, var(--mypage-accent) 60%, #ec4899)",
+    "color-mix(in srgb, var(--mypage-accent) 55%, #06b6d4)",
+    "color-mix(in srgb, var(--mypage-accent) 45%, #ef4444)",
   ];
+}
+
+function labelFormatter(config: Record<string, unknown>) {
+  const truncate = config.truncateAxisLabels !== false;
+  const limit = Math.max(4, Number(config.axisLabelMaxLength ?? 12));
+  return (value: string) =>
+    truncate && value.length > limit ? `${value.slice(0, limit)}…` : value;
 }

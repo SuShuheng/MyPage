@@ -1,4 +1,7 @@
-import type { App} from "obsidian";
+import type * as NodeChildProcess from "node:child_process";
+import type * as NodeFsPromises from "node:fs/promises";
+import type * as NodePath from "node:path";
+import type { App } from "obsidian";
 import { Platform, TFile, normalizePath } from "obsidian";
 import type { ActionExecutor } from "../actions/ActionExecutor";
 import type { CapabilityId } from "../persistence/settings-types";
@@ -74,6 +77,54 @@ export class CapabilityBroker {
         return this.runObsidianCommand(input as CapabilityInputMap["obsidian.command"]);
       case "system.exec":
         return this.exec(input as CapabilityInputMap["system.exec"]);
+    }
+  }
+
+  public async validateConfiguredTarget(
+    moduleId: string,
+    format: "directory-path" | "git-repository",
+    value: string,
+  ): Promise<void> {
+    ensureDesktop();
+    const fs = desktopRequire<typeof NodeFsPromises>("fs/promises");
+    const path = await resolveRealPath(value, false);
+    const capability: CapabilityId =
+      format === "git-repository" ? "git.read" : "externalFs.read";
+    const context =
+      format === "git-repository" ? { repository: path } : { path };
+    const requestedContext =
+      format === "git-repository"
+        ? { repository: value }
+        : { path: value };
+    if (!this.permissions.isGranted(moduleId, capability, requestedContext)) {
+      throw new Error(
+        `此路径尚未授权 ${capability}。请先在“权限”页授予该模块访问范围。`,
+      );
+    }
+    if (!this.permissions.isGranted(moduleId, capability, context)) {
+      throw new Error(
+        `此路径解析后的真实位置超出已授权范围：${path}`,
+      );
+    }
+    const stat = await fs.stat(path);
+    if (!stat.isDirectory()) throw new Error("此路径不是文件夹。");
+    if (format === "git-repository") {
+      const nodePath = desktopRequire<typeof NodePath>("path");
+      const gitEntry = nodePath.join(path, ".git");
+      const bareHead = nodePath.join(path, "HEAD");
+      const bareObjects = nodePath.join(path, "objects");
+      const workTree = await fs.stat(gitEntry).then(
+        (entry) => entry.isDirectory() || entry.isFile(),
+        () => false,
+      );
+      const bareRepository =
+        (await fs.stat(bareHead).then((entry) => entry.isFile(), () => false)) &&
+        (await fs
+          .stat(bareObjects)
+          .then((entry) => entry.isDirectory(), () => false));
+      if (!workTree && !bareRepository) {
+        throw new Error("此文件夹不是 Git 工作树或裸仓库。");
+      }
     }
   }
 
@@ -162,7 +213,7 @@ export class CapabilityBroker {
     input: CapabilityInputMap["externalFs.read"],
   ) {
     ensureDesktop();
-    const fs = await import("node:fs/promises");
+    const fs = desktopRequire<typeof NodeFsPromises>("fs/promises");
     const path = await resolveRealPath(input.path, false);
     this.assertResolvedScope(moduleId, "externalFs.read", { path });
     const stat = await fs.stat(path);
@@ -185,7 +236,7 @@ export class CapabilityBroker {
     input: CapabilityInputMap["externalFs.write"],
   ) {
     ensureDesktop();
-    const fs = await import("node:fs/promises");
+    const fs = desktopRequire<typeof NodeFsPromises>("fs/promises");
     const path = await resolveRealPath(input.path, true);
     this.assertResolvedScope(moduleId, "externalFs.write", { path });
     await fs.writeFile(path, input.data);
@@ -273,8 +324,8 @@ function ensureDesktop(): void {
 }
 
 async function resolveRealPath(path: string, allowMissing: boolean): Promise<string> {
-  const fs = await import("node:fs/promises");
-  const nodePath = await import("node:path");
+  const fs = desktopRequire<typeof NodeFsPromises>("fs/promises");
+  const nodePath = desktopRequire<typeof NodePath>("path");
   const resolved = nodePath.resolve(path);
   if (allowMissing) {
     const parent = await fs.realpath(nodePath.dirname(resolved));
@@ -291,7 +342,8 @@ async function runProcess(
   if (args.length > 64 || args.some((arg) => arg.length > 4_096 || arg.includes("\0"))) {
     throw new Error("Process arguments exceed safety limits.");
   }
-  const { execFile } = await import("node:child_process");
+  const { execFile } =
+    desktopRequire<typeof NodeChildProcess>("child_process");
   return new Promise((resolve, reject) => {
     execFile(
       executable,
@@ -315,8 +367,8 @@ async function listExternalDirectory(
   root: string,
   recursive: boolean,
 ): Promise<Array<{ path: string; type: "file" | "directory"; size: number }>> {
-  const fs = await import("node:fs/promises");
-  const nodePath = await import("node:path");
+  const fs = desktopRequire<typeof NodeFsPromises>("fs/promises");
+  const nodePath = desktopRequire<typeof NodePath>("path");
   const results: Array<{
     path: string;
     type: "file" | "directory";
@@ -344,4 +396,14 @@ async function listExternalDirectory(
     }
   }
   return results;
+}
+
+function desktopRequire<T>(moduleId: string): T {
+  const runtime = globalThis as typeof globalThis & {
+    require?: (id: string) => unknown;
+  };
+  if (typeof runtime.require !== "function") {
+    throw new Error("Obsidian desktop Node.js bridge is unavailable.");
+  }
+  return runtime.require(moduleId) as T;
 }

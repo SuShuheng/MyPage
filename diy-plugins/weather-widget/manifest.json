@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "weather-widget",
+  "name": "天气",
+  "version": "1.0.0",
+  "description": "通过用户授权的 Open-Meteo 网络范围显示当前位置天气。",
+  "author": "苏书蘅（SuShuHeng）",
+  "license": "Apache-2.0",
+  "minMyPageVersion": "1.0.0",
+  "platforms": ["desktop", "mobile"],
+  "entry": "main.js",
+  "styles": "styles.css",
+  "configSchema": "config.schema.json",
+  "trust": "trusted",
+  "permissions": [
+    {
+      "capability": "network.request",
+      "reason": "读取用户所选坐标的实时天气；不上传 Vault 内容。",
+      "suggestedScope": { "domains": ["api.open-meteo.com"] }
+    }
+  ],
+  "contributions": [
+    {
+      "id": "current-weather",
+      "kind": "widget",
+      "name": "天气",
+      "description": "温度、体感、风速和天气状态。",
+      "icon": "cloud-sun",
+      "defaultSize": { "w": 4, "h": 3 },
+      "configSchema": "config.schema.json"
+    }
+  ]
+}

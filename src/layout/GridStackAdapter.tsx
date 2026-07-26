@@ -15,6 +15,7 @@ interface GridStackAdapterProps {
   widgets: WidgetInstance[];
   onLayoutChange: (layouts: Record<string, WidgetLayout>) => void;
   children: ComponentChildren;
+  resetKey?: number;
 }
 
 export function GridStackAdapter({
@@ -24,6 +25,7 @@ export function GridStackAdapter({
   widgets,
   onLayoutChange,
   children,
+  resetKey = 0,
 }: GridStackAdapterProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onLayoutChangeRef = useRef(onLayoutChange);
@@ -84,6 +86,7 @@ export function GridStackAdapter({
     gridOptions.push,
     gridOptions.rowHeight,
     widgetIdentityKey,
+    resetKey,
   ]);
 
   return (

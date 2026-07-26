@@ -1,7 +1,8 @@
 import type { App, WorkspaceLeaf } from "obsidian";
-import { Notice, Plugin } from "obsidian";
+import { addIcon, Notice, Plugin } from "obsidian";
 import {
   MY_PAGE_ICON,
+  MY_PAGE_ICON_SVG,
   MY_PAGE_VIEW_TYPE,
   PLUGIN_DIRECTORIES,
 } from "./constants";
@@ -59,8 +60,11 @@ export default class MyPagePlugin extends Plugin {
   public diagnostics!: DiagnosticsService;
   public themeMarketplace!: ThemeMarketplaceService;
   private settingTab!: MyPageSettingTab;
+  private refreshTimer?: number;
+  private refreshInFlight: Promise<void> | undefined;
 
   public override async onload(): Promise<void> {
+    addIcon(MY_PAGE_ICON, MY_PAGE_ICON_SVG);
     this.settingsStore = new SettingsStore(this);
 
     await this.settingsStore.load();
@@ -135,6 +139,7 @@ export default class MyPagePlugin extends Plugin {
       this.settingsStore,
       this.workers,
     );
+    await this.themeMarketplace.syncInstalledOfficialThemes();
     this.secrets = new SecretReferenceService(this.app);
     this.performanceMonitor = new PerformanceMonitor();
     this.performanceMonitor.start();
@@ -157,6 +162,8 @@ export default class MyPagePlugin extends Plugin {
           this.moduleRuntime,
           this.themeService,
           this.moduleManager,
+          this.capabilityBroker,
+          () => this.refreshAllData(true),
           () => this.openMarketplace(),
           () => this.pickModuleArchive(),
         ),
@@ -234,6 +241,18 @@ export default class MyPagePlugin extends Plugin {
 
     this.settingTab = new MyPageSettingTab(this.app, this);
     this.addSettingTab(this.settingTab);
+    const unsubscribeRefreshPolicy = this.settingsStore.changed.subscribe(
+      ({ previous, current }) => {
+        if (
+          previous.uiState.refreshIntervalMs !==
+          current.uiState.refreshIntervalMs
+        ) {
+          this.configureRefreshTimer();
+        }
+      },
+    );
+    this.register(unsubscribeRefreshPolicy);
+    this.configureRefreshTimer();
 
     this.app.workspace.onLayoutReady(() => {
       void this.handleWorkspaceReady();
@@ -241,6 +260,7 @@ export default class MyPagePlugin extends Plugin {
   }
 
   public override onunload(): void {
+    if (this.refreshTimer !== undefined) window.clearInterval(this.refreshTimer);
     this.moduleRuntime.dispose();
     this.moduleManager.dispose();
     this.dataEngine.dispose();
@@ -248,6 +268,41 @@ export default class MyPagePlugin extends Plugin {
     this.performanceMonitor.dispose();
     this.settingsStore.dispose();
     this.app.workspace.detachLeavesOfType(MY_PAGE_VIEW_TYPE);
+  }
+
+  public async refreshAllData(notify = false): Promise<void> {
+    if (
+      this.settingsStore.snapshot.dashboards[
+        this.settingsStore.snapshot.tabs.byId[
+          this.settingsStore.snapshot.uiState.lastActiveTabId
+        ]?.dashboardId ?? ""
+      ]?.refreshPolicy.pauseWhenHidden &&
+      document.hidden &&
+      !notify
+    ) {
+      return;
+    }
+    this.refreshInFlight ??= Promise.all([
+      this.dataEngine.refreshAll(),
+      Promise.resolve().then(() => this.moduleRuntime.refreshAll()),
+    ])
+      .then(() => undefined)
+      .finally(() => {
+        this.refreshInFlight = undefined;
+      });
+    await this.refreshInFlight;
+    if (notify) new Notice("MyPage 数据已刷新。", 2_000);
+  }
+
+  private configureRefreshTimer(): void {
+    if (this.refreshTimer !== undefined) window.clearInterval(this.refreshTimer);
+    const interval = Math.max(
+      15_000,
+      this.settingsStore.snapshot.uiState.refreshIntervalMs ?? 300_000,
+    );
+    this.refreshTimer = window.setInterval(() => {
+      void this.refreshAllData(false);
+    }, interval);
   }
 
   public async openMyPage(): Promise<void> {

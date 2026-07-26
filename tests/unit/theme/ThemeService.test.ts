@@ -1,10 +1,18 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { DEFAULT_THEME_TOKENS } from "../../../src/persistence/default-settings";
-import { resolveSandboxTokens } from "../../../src/theme/ThemeService";
+import {
+  createDefaultSettings,
+  DEFAULT_THEME_TOKENS,
+} from "../../../src/persistence/default-settings";
+import {
+  resolveSandboxTokens,
+  ThemeService,
+} from "../../../src/theme/ThemeService";
+import { OFFICIAL_THEMES } from "../../../src/theme/official-themes";
 
 describe("ThemeService sandbox bridge", () => {
   afterEach(() => {
     document.documentElement.removeAttribute("style");
+    document.body.classList.remove("theme-dark", "theme-light");
   });
 
   it("resolves Obsidian CSS variables to concrete iframe-safe colors", () => {
@@ -36,5 +44,22 @@ describe("ThemeService sandbox bridge", () => {
       border: "#454545",
     });
     expect(String(result.palette)).not.toContain("var(");
+  });
+
+  it("selects the matching light and dark subtheme in real time", () => {
+    const service = new ThemeService();
+    const settings = createDefaultSettings();
+    const theme = structuredClone(OFFICIAL_THEMES[0]!);
+    settings.themeProfiles[theme.id] = theme;
+    const dashboard = settings.dashboards["dashboard-home"]!;
+    dashboard.themeProfileId = theme.id;
+    document.body.classList.add("theme-light");
+    const light = service.dashboardStyle(settings, dashboard);
+    document.body.classList.replace("theme-light", "theme-dark");
+    const dark = service.dashboardStyle(settings, dashboard);
+    expect(light["--mypage-background"]).not.toBe(
+      dark["--mypage-background"],
+    );
+    expect(light["--mypage-accent"]).not.toBe(dark["--mypage-accent"]);
   });
 });

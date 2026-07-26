@@ -76,6 +76,8 @@ export const DEFAULT_WIDGET_APPEARANCE: WidgetAppearance = {
   showIcon: true,
   showBackground: true,
   showBorder: true,
+  contentScale: 1,
+  iconScale: 1,
 };
 
 function createWidget(
@@ -210,6 +212,7 @@ export function createDefaultSettings(): MyPageSettings {
       draftRetentionDays: 7,
       backupRetention: 10,
       workerCount: "auto",
+      refreshIntervalMs: 300_000,
       debug: false,
     },
     editDrafts: {},

@@ -31,21 +31,27 @@ export class ModuleSandbox {
     this.iframe = document.createElement("iframe");
     this.iframe.className = "mypage-module-sandbox";
     this.iframe.title = `${options.manifest.name} · ${options.contributionId}`;
-    this.iframe.setAttribute("sandbox", "allow-scripts");
+    // Electron 39 does not execute sandboxed srcdoc frames unless
+    // allow-same-origin is present. The document is therefore loaded from a
+    // data: URL, whose origin remains opaque even with this token; it cannot
+    // reach the app:// parent, while scripts and postMessage keep working.
+    this.iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
     this.iframe.setAttribute(
       "aria-label",
       `${options.manifest.name} 自定义组件`,
     );
     window.addEventListener("message", this.handleMessage);
-    this.iframe.srcdoc = createSandboxDocument(
-      this.session,
-      options.manifest.id,
-      options.contributionId,
-      options.code,
-      options.styles,
-      options.config,
-      options.theme,
-    );
+    this.iframe.src = `data:text/html;base64,${toBase64(
+      createSandboxDocument(
+        this.session,
+        options.manifest.id,
+        options.contributionId,
+        options.code,
+        options.styles,
+        options.config,
+        options.theme,
+      ),
+    )}`;
     options.container.appendChild(this.iframe);
   }
 
@@ -55,6 +61,10 @@ export class ModuleSandbox {
 
   public updateTheme(theme: Record<string, string | number>): void {
     this.post({ type: "theme", theme });
+  }
+
+  public requestRefresh(): void {
+    this.post({ type: "refresh" });
   }
 
   public dispose(): void {
@@ -214,7 +224,7 @@ function createSandboxDocument(
     document.head.appendChild(style);
     let sequence = 0;
     const pending = new Map();
-    const listeners = { data: new Set(), theme: new Set() };
+    const listeners = { data: new Set(), theme: new Set(), refresh: new Set() };
     let hasData = false;
     let latestData;
     const api = Object.freeze({
@@ -233,6 +243,7 @@ function createSandboxDocument(
         return () => listeners.data.delete(listener);
       },
       onTheme(listener) { listeners.theme.add(listener); return () => listeners.theme.delete(listener); },
+      onRefresh(listener) { listeners.refresh.add(listener); return () => listeners.refresh.delete(listener); },
       publishRecords(records) {
         if (!Array.isArray(records)) throw new Error("publishRecords expects an array.");
         parent.postMessage({ type: "records", session: payload.session, records }, "*");
@@ -253,6 +264,8 @@ function createSandboxDocument(
       } else if (event.data.type === "theme") {
         applyTheme(event.data.theme);
         listeners.theme.forEach(listener => listener(event.data.theme));
+      } else if (event.data.type === "refresh") {
+        listeners.refresh.forEach(listener => listener());
       }
     });
     const source = decode(payload.code);

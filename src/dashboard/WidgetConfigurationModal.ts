@@ -6,6 +6,7 @@ import type {
 } from "../persistence/settings-types";
 import { BasesBindingModal } from "../bases/BasesBindingModal";
 import type { ModuleManager } from "../modules/ModuleManager";
+import type { CapabilityBroker } from "../permissions/CapabilityBroker";
 
 type ConfigTab = "content" | "general" | "advanced";
 
@@ -34,6 +35,7 @@ export class WidgetConfigurationModal extends Modal {
     app: App,
     widget: WidgetInstance,
     private readonly moduleManager: ModuleManager,
+    private readonly capabilityBroker: CapabilityBroker,
     private readonly onSave: (widget: WidgetInstance) => void,
   ) {
     super(app);
@@ -300,13 +302,21 @@ export class WidgetConfigurationModal extends Modal {
     });
     new Setting(container)
       .setName("卡片外观")
-      .setDesc("控制标题、背景和边框。")
+      .setDesc("控制标题、图标、背景和边框。")
       .addToggle((toggle) =>
         toggle
           .setTooltip("显示标题")
           .setValue(this.draft.appearance.showTitle)
           .onChange((value) => {
             this.draft.appearance.showTitle = value;
+          }),
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setTooltip("显示图标")
+          .setValue(this.draft.appearance.showIcon)
+          .onChange((value) => {
+            this.draft.appearance.showIcon = value;
           }),
       )
       .addToggle((toggle) =>
@@ -323,6 +333,68 @@ export class WidgetConfigurationModal extends Modal {
           .setValue(this.draft.appearance.showBorder)
           .onChange((value) => {
             this.draft.appearance.showBorder = value;
+          }),
+      );
+    new Setting(container)
+      .setName("内容缩放")
+      .setDesc("仅缩放当前组件的正文内容，不改变卡片占用网格。")
+      .addSlider((slider) =>
+        slider
+          .setLimits(50, 200, 5)
+          .setDynamicTooltip()
+          .setValue(Math.round((this.draft.appearance.contentScale ?? 1) * 100))
+          .onChange((value) => {
+            this.draft.appearance.contentScale = value / 100;
+          }),
+      );
+    new Setting(container)
+      .setName("图标缩放")
+      .setDesc("调整组件标题图标的视觉尺寸。")
+      .addSlider((slider) =>
+        slider
+          .setLimits(50, 200, 5)
+          .setDynamicTooltip()
+          .setValue(Math.round((this.draft.appearance.iconScale ?? 1) * 100))
+          .onChange((value) => {
+            this.draft.appearance.iconScale = value / 100;
+          }),
+      );
+    new Setting(container)
+      .setName("图表坐标标签")
+      .setDesc("适用于趋势、分布、热力图及声明兼容配置的官方模块。")
+      .addToggle((toggle) =>
+        toggle
+          .setTooltip("显示 X 轴/横向标签")
+          .setValue(this.draft.config.showXAxisLabels !== false)
+          .onChange((value) => {
+            this.draft.config.showXAxisLabels = value;
+          }),
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setTooltip("显示 Y 轴/纵向标签")
+          .setValue(this.draft.config.showYAxisLabels !== false)
+          .onChange((value) => {
+            this.draft.config.showYAxisLabels = value;
+          }),
+      );
+    new Setting(container)
+      .setName("长标签省略")
+      .setDesc("超出指定字符数时以省略号结尾。")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.draft.config.truncateAxisLabels !== false)
+          .onChange((value) => {
+            this.draft.config.truncateAxisLabels = value;
+          }),
+      )
+      .addSlider((slider) =>
+        slider
+          .setLimits(4, 40, 1)
+          .setDynamicTooltip()
+          .setValue(Number(this.draft.config.axisLabelMaxLength ?? 12))
+          .onChange((value) => {
+            this.draft.config.axisLabelMaxLength = value;
           }),
       );
   }
@@ -742,7 +814,11 @@ export class WidgetConfigurationModal extends Modal {
     const pathTemplate =
       this.draft.contributionId === "markdown-actions"
         ? validateVaultFilePath(
-            String(this.draft.config.pathTemplate ?? ""),
+            String(
+              this.draft.config.pathTemplate ??
+                this.draft.config.path ??
+                "MyPage/{date}.md",
+            ),
             true,
           )
         : undefined;
@@ -771,8 +847,20 @@ export class WidgetConfigurationModal extends Modal {
     if (schema.format === "extension" && !/^\.[A-Za-z0-9]+$/u.test(value)) {
       return "扩展名需要以点开头，例如 .md。";
     }
-    if (schema.format === "field-name" && !/^[A-Za-z_][\w.-]*$/u.test(value)) {
-      return "字段名只能包含字母、数字、下划线、点和连字符。";
+    if (schema.format === "vault-folder") {
+      const normalized = normalizePath(value).replace(/^\/+/u, "");
+      if (
+        /^[A-Za-z]:/u.test(normalized) ||
+        normalized.split("/").includes("..")
+      ) {
+        return "请输入 Vault 内的相对文件夹路径，不能使用盘符或 ..。";
+      }
+    }
+    if (
+      schema.format === "field-name" &&
+      !/^[\p{L}_][\p{L}\p{N}_.-]*$/u.test(value)
+    ) {
+      return "字段名需以文字或下划线开头，可包含文字、数字、点和连字符。";
     }
     if (
       schema.format === "directory-path" ||
@@ -782,18 +870,13 @@ export class WidgetConfigurationModal extends Modal {
         return "需要填写绝对路径，例如 H:\\GitHub\\project。";
       }
       try {
-        const fs = await import("node:fs/promises");
-        const stat = await fs.stat(value);
-        if (!stat.isDirectory()) return "此路径不是文件夹。";
-        if (schema.format === "git-repository") {
-          const separator = value.endsWith("/") || value.endsWith("\\") ? "" : "/";
-          const git = await fs.stat(`${value}${separator}.git`);
-          if (!git.isDirectory()) return "此文件夹不是 Git 仓库（找不到 .git）。";
-        }
-      } catch {
-        return schema.format === "git-repository"
-          ? "查无此 Git 仓库，或当前用户无权读取。"
-          : "查无此文件夹，或当前用户无权读取。";
+        await this.capabilityBroker.validateConfiguredTarget(
+          this.draft.moduleId,
+          schema.format,
+          value,
+        );
+      } catch (error) {
+        return error instanceof Error ? error.message : String(error);
       }
     }
     return undefined;

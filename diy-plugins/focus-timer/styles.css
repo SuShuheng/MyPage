@@ -1,0 +1,5 @@
+.focus-shell{height:100%;display:grid;place-items:center;align-content:center;gap:12px;color:var(--mypage-text)}
+.focus-ring{width:132px;aspect-ratio:1;display:grid;place-items:center;align-content:center;border-radius:50%;background:conic-gradient(var(--mypage-accent) var(--focus-progress,0%),color-mix(in srgb,var(--mypage-border) 65%,transparent) 0);position:relative}
+.focus-ring::after{content:"";position:absolute;inset:10px;border-radius:50%;background:var(--mypage-cardBackground,var(--mypage-card-background))}
+.focus-ring strong,.focus-ring span{position:relative;z-index:1}.focus-ring strong{font-size:30px}.focus-ring span,.focus-progress{color:var(--mypage-mutedText,var(--mypage-muted-text));font-size:12px;margin:0}
+.focus-actions{display:flex;gap:8px}.focus-actions button{border:1px solid var(--mypage-border);border-radius:9px;padding:7px 16px;color:var(--mypage-text);background:transparent;cursor:pointer}.focus-actions button:first-child{color:#fff;background:var(--mypage-accent);border-color:var(--mypage-accent)}

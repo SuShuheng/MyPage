@@ -16,6 +16,7 @@ import type {
   WidgetInstance,
 } from "../persistence/settings-types";
 import {
+  BUILT_IN_WIDGETS,
   ComponentGallery,
   type BuiltInWidgetDefinition,
 } from "./ComponentGallery";
@@ -29,6 +30,7 @@ import type { ThemeService } from "../theme/ThemeService";
 import type { ModuleManager } from "../modules/ModuleManager";
 import { WidgetConfigurationModal } from "./WidgetConfigurationModal";
 import { confirmDialog, promptDialog } from "../components/ThemeDialog";
+import type { CapabilityBroker } from "../permissions/CapabilityBroker";
 
 interface DashboardShellProps {
   settingsStore: SettingsStore;
@@ -38,6 +40,8 @@ interface DashboardShellProps {
   moduleRuntime: ModuleRuntime;
   themeService: ThemeService;
   moduleManager: ModuleManager;
+  capabilityBroker: CapabilityBroker;
+  onRefresh: () => Promise<void>;
   onOpenMarketplace: () => void;
   onImportModuleZip: () => void;
 }
@@ -50,6 +54,8 @@ export function DashboardShell({
   moduleRuntime,
   themeService,
   moduleManager,
+  capabilityBroker,
+  onRefresh,
   onOpenMarketplace,
   onImportModuleZip,
 }: DashboardShellProps) {
@@ -60,6 +66,7 @@ export function DashboardShell({
   const [sessionVersion, setSessionVersion] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [moduleRegistryVersion, setModuleRegistryVersion] = useState(0);
+  const [baseThemeVersion, setBaseThemeVersion] = useState(0);
   const [breakpoint, setBreakpoint] = useState<Breakpoint>(() =>
     resolveBreakpoint(window.innerWidth),
   );
@@ -77,6 +84,17 @@ export function DashboardShell({
     const update = () => setBreakpoint(resolveBreakpoint(window.innerWidth));
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setBaseThemeVersion((value) => value + 1);
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(
@@ -120,6 +138,13 @@ export function DashboardShell({
         ),
     [settings.tabs],
   );
+  const hiddenTabs = useMemo(
+    () =>
+      settings.tabs.order
+        .map((id) => settings.tabs.byId[id])
+        .filter((tab): tab is TabDefinition => tab !== undefined && tab.hidden),
+    [settings.tabs],
+  );
 
   const rerenderDraft = () => setSessionVersion((value) => value + 1);
 
@@ -142,6 +167,7 @@ export function DashboardShell({
   const startEditing = () => {
     if (!dashboard) return;
     setSession(new EditSessionManager(settingsStore.snapshot, dashboard.id));
+    setSessionVersion((value) => value + 1);
   };
 
   const finishEditing = async () => {
@@ -160,6 +186,7 @@ export function DashboardShell({
     if (!session) return;
     session.cancel();
     setSession(null);
+    setSessionVersion((value) => value + 1);
     setGalleryOpen(false);
     new Notice("已取消主页改动；新安装的模块仍会保留。");
   };
@@ -280,9 +307,17 @@ export function DashboardShell({
     menu.showAtMouseEvent(event);
   };
 
+  void baseThemeVersion;
   const dashboardTheme = dashboard
     ? themeService.dashboardStyle(settings, dashboard)
     : {};
+  useEffect(() => {
+    const accent = dashboardTheme["--mypage-accent"];
+    if (accent !== undefined) {
+      document.body.style.setProperty("--mypage-active-accent", String(accent));
+    }
+    return () => document.body.style.removeProperty("--mypage-active-accent");
+  }, [dashboardTheme["--mypage-accent"]]);
   const installedWidgets = moduleManager.registry.contributions
     .list("widget")
     .map(({ moduleId, contribution }) => {
@@ -303,7 +338,18 @@ export function DashboardShell({
         defaultConfig: structuredClone(settings.moduleSettings[moduleId] ?? {}),
       };
     });
-  const renderWidget = (widget: WidgetInstance) => (
+  const renderWidget = (widget: WidgetInstance) => {
+    const icon =
+      widget.moduleId === "mypage-core"
+        ? BUILT_IN_WIDGETS.find((item) => item.id === widget.contributionId)?.icon
+        : moduleManager.registry.contributions
+            .list("widget")
+            .find(
+              (item) =>
+                item.moduleId === widget.moduleId &&
+                item.contribution.id === widget.contributionId,
+            )?.contribution.icon;
+    return (
     <GridStackItem
       key={widget.id}
       widget={widget}
@@ -314,7 +360,8 @@ export function DashboardShell({
         class="mypage-widget-header"
         hidden={!widget.appearance.showTitle}
       >
-        <div>
+        <div class="mypage-widget-heading">
+          {widget.appearance.showIcon && icon ? <Icon name={icon} /> : null}
           <h2>{widget.title ?? widget.contributionId}</h2>
         </div>
         {session ? (
@@ -336,6 +383,7 @@ export function DashboardShell({
                     app,
                     widget,
                     moduleManager,
+                    capabilityBroker,
                     (configured) => {
                       session.replaceWidget(widget.id, configured);
                       rerenderDraft();
@@ -370,21 +418,23 @@ export function DashboardShell({
           </button>
         ) : null}
       </div>
-      <WidgetHost
-        app={app}
-        actions={actions}
-        dataEngine={dataEngine}
-        widget={widget}
-        editing={session !== null}
-        moduleRuntime={moduleRuntime}
-        theme={themeService.sandboxTokens(
-          settings,
-          dashboard!,
-          widget.appearance,
-        )}
-        safeMode={settings.general.safeMode}
-        runtimeVersion={moduleRegistryVersion}
-      />
+      <div class="mypage-widget-body">
+        <WidgetHost
+          app={app}
+          actions={actions}
+          dataEngine={dataEngine}
+          widget={widget}
+          editing={session !== null}
+          moduleRuntime={moduleRuntime}
+          theme={themeService.sandboxTokens(
+            settings,
+            dashboard!,
+            widget.appearance,
+          )}
+          safeMode={settings.general.safeMode}
+          runtimeVersion={moduleRegistryVersion}
+        />
+      </div>
       {session ? (
         <>
           <button
@@ -408,7 +458,8 @@ export function DashboardShell({
         </>
       ) : null}
     </GridStackItem>
-  );
+    );
+  };
   return (
     <div
       class={`mypage-shell${session ? " is-editing" : ""}`}
@@ -424,7 +475,7 @@ export function DashboardShell({
       </a>
       <header class="mypage-topbar">
         <div class="mypage-brand" aria-label="MyPage">
-          <Icon name="panels-top-left" />
+          <Icon name="mypage-color" />
           <span>MyPage</span>
         </div>
         <nav class="mypage-tabs" aria-label="主页标签">
@@ -512,7 +563,37 @@ export function DashboardShell({
             </>
           ) : (
             <>
-              <button class="mypage-icon-button" type="button" aria-label="刷新数据">
+              <button
+                class="mypage-icon-button"
+                type="button"
+                aria-label={`隐藏的主页${hiddenTabs.length > 0 ? `（${hiddenTabs.length}）` : ""}`}
+                disabled={hiddenTabs.length === 0}
+                onClick={(event) => {
+                  const menu = new Menu();
+                  if (hiddenTabs.length === 0) {
+                    menu.addItem((item) => item.setTitle("没有隐藏的主页").setDisabled(true));
+                  } else {
+                    for (const tab of hiddenTabs) {
+                      menu.addItem((item) =>
+                        item
+                          .setTitle(`恢复：${tab.name}`)
+                          .setIcon("eye")
+                          .onClick(() => void tabManager.setHidden(tab.id, false)),
+                      );
+                    }
+                  }
+                  menu.showAtMouseEvent(event);
+                }}
+              >
+                <Icon name="eye" />
+                {hiddenTabs.length > 0 ? <span class="mypage-button-badge">{hiddenTabs.length}</span> : null}
+              </button>
+              <button
+                class="mypage-icon-button"
+                type="button"
+                aria-label="刷新数据"
+                onClick={() => void onRefresh()}
+              >
                 <Icon name="refresh-cw" />
               </button>
               <button
@@ -570,6 +651,7 @@ export function DashboardShell({
                 editing={session !== null}
                 gridOptions={dashboard.gridOptions}
                 widgets={widgets.filter((widget) => !widget.groupId)}
+                resetKey={sessionVersion}
                 onLayoutChange={(layouts) => {
                   if (session) {
                     session.updateLayouts(breakpoint, layouts);
@@ -621,6 +703,7 @@ export function DashboardShell({
                       editing={session !== null}
                       gridOptions={dashboard.gridOptions}
                       widgets={groupWidgets}
+                      resetKey={sessionVersion}
                       onLayoutChange={(layouts) => {
                         if (session) {
                           session.updateLayouts(breakpoint, layouts);

@@ -1,5 +1,7 @@
 # MyPage
 
+<img src="assets/mypage-icon.png" alt="MyPage 彩色主页组件图标" width="128">
+
 MyPage 是面向 Obsidian 的本地优先可视化主页与 DIY 模块平台。它提供多主页
 TAB、响应式 iOS 风格组件网格、统一数据流水线、八类内置组件、三级主题、受控
 写入、Dashboard 蓝图、模块市场、双层信任和应用内更新。

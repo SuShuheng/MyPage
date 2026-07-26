@@ -53,7 +53,15 @@ describe("MarketplaceService detection policy", () => {
     const index = await service.check("official", "official-page-open");
     expect(index.repository).toBe("SuShuHeng/MyPage");
     expect(index.modules.map((module) => module.id)).toEqual(
-      expect.arrayContaining(["hello-widget", "hexo-insights"]),
+      expect.arrayContaining([
+        "calendar-widget",
+        "focus-timer",
+        "hexo-insights",
+        "weather-widget",
+      ]),
+    );
+    expect(index.modules.map((module) => module.id)).not.toContain(
+      "hello-widget",
     );
     expect(settings.markets.official?.cachedIndex?.index).toEqual(index);
   });

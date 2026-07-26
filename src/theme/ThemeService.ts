@@ -3,6 +3,7 @@ import type {
   MyPageSettings,
   ThemeTokens,
   WidgetAppearance,
+  ThemeProfile,
 } from "../persistence/settings-types";
 import { DEFAULT_THEME_TOKENS } from "../persistence/default-settings";
 import { THEME_CSS_VARIABLES } from "./theme-tokens";
@@ -15,9 +16,10 @@ export class ThemeService {
     const profile = dashboard.themeProfileId
       ? settings.themeProfiles[dashboard.themeProfileId]
       : undefined;
+    const tokens = this.resolveProfileTokens(profile);
     const style = toCssProperties({
       ...DEFAULT_THEME_TOKENS,
-      ...(profile?.tokens ?? {}),
+      ...tokens,
     });
     if (profile?.fontFamily) {
       style["--mypage-font-family"] = profile.fontFamily;
@@ -27,10 +29,23 @@ export class ThemeService {
     style["--mypage-transition"] = `${Math.max(0, Math.round(180 * motionScale))}ms ease-out`;
     if (profile?.backgroundImage) {
       style.backgroundImage = normalizeBackgroundImage(profile.backgroundImage);
-      style.backgroundSize = "cover";
-      style.backgroundPosition = "center";
-      style.backgroundAttachment = "fixed";
+      style.backgroundSize =
+        profile.backgroundFit === "stretch"
+          ? "100% 100%"
+          : profile.backgroundFit ?? "cover";
+      style.backgroundPosition = profile.backgroundPosition ?? "center";
+      style.backgroundRepeat = profile.backgroundRepeat ?? "no-repeat";
+      style.backgroundAttachment = profile.backgroundAttachment ?? "fixed";
     }
+    style["--mypage-page-padding"] = `${profile?.pagePadding ?? 18}px`;
+    style["--mypage-content-max-width"] =
+      profile?.maxContentWidth && profile.maxContentWidth > 0
+        ? `${profile.maxContentWidth}px`
+        : "none";
+    style["--mypage-font-scale"] = profile?.fontScale ?? 1;
+    style["--mypage-background-overlay"] = profile?.backgroundOverlay ?? "transparent";
+    style["--mypage-background-overlay-opacity"] =
+      profile?.backgroundOverlayOpacity ?? 0;
     return style;
   }
 
@@ -41,6 +56,8 @@ export class ThemeService {
       ...toCssProperties(appearance.themeOverrides ?? {}),
       "--mypage-widget-background-visible": appearance.showBackground ? 1 : 0,
       "--mypage-widget-border-visible": appearance.showBorder ? 1 : 0,
+      "--mypage-content-scale": appearance.contentScale ?? 1,
+      "--mypage-icon-scale": appearance.iconScale ?? 1,
     };
   }
 
@@ -54,15 +71,25 @@ export class ThemeService {
       : undefined;
     const tokens: ThemeTokens = {
       ...DEFAULT_THEME_TOKENS,
-      ...(profile?.tokens ?? {}),
+      ...this.resolveProfileTokens(profile),
       ...(appearance.themeOverrides ?? {}),
     };
     return {
       ...resolveSandboxTokens(tokens),
-      mode: profile?.mode ?? "obsidian",
+      mode: this.baseMode(),
       widgetBackgroundVisible: appearance.showBackground ? 1 : 0,
       widgetBorderVisible: appearance.showBorder ? 1 : 0,
     };
+  }
+
+  public baseMode(): "light" | "dark" {
+    return document.body.classList.contains("theme-dark") ? "dark" : "light";
+  }
+
+  private resolveProfileTokens(profile?: ThemeProfile): Partial<ThemeTokens> {
+    if (!profile) return {};
+    const variant = profile.variants?.[this.baseMode()] ?? {};
+    return { ...profile.tokens, ...variant };
   }
 }
 

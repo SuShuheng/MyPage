@@ -184,6 +184,10 @@ export class ModuleRuntime {
     });
   }
 
+  public refreshAll(): void {
+    for (const sandbox of this.sandboxes) sandbox.requestRefresh();
+  }
+
   public unmount(sandbox: ModuleSandbox): void {
     sandbox.dispose();
     this.sandboxes.delete(sandbox);

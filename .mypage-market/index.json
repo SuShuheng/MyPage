@@ -1,26 +1,52 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-26T04:07:16.158Z",
+  "generatedAt": "2026-07-26T06:22:29.189Z",
   "repository": "SuShuHeng/MyPage",
   "modules": [
     {
-      "id": "hello-widget",
-      "name": "Hello Widget",
-      "description": "展示 MyPage DIY 模块 API、主题桥和实时数据订阅的最小示例。",
-      "author": "MyPage Contributors",
+      "id": "calendar-widget",
+      "name": "交互日历",
+      "description": "主题自适应的月历、日期定位与周起始日配置。",
+      "author": "苏书蘅（SuShuHeng）",
       "license": "Apache-2.0",
-      "path": "diy-plugins/hello-widget",
+      "path": "diy-plugins/calendar-widget",
       "repository": "SuShuHeng/MyPage",
       "categories": [
-        "visualization",
-        "templates"
+        "visualization"
       ],
       "versions": [
         {
           "version": "1.0.0",
           "releaseTag": "1.0.0",
-          "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/hello-widget_1.0.0.zip",
-          "sha256": "07f1dd2ca34654f242ae679577120833fbcf230b0fb589f30cf9bfe286a8c2fb",
+          "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/calendar-widget_1.0.0.zip",
+          "sha256": "36396cc2b5ad6ce2f07605f5e2835ed646ba63e5a9aa2e09bca38dbe7172f2f0",
+          "minMyPageVersion": "1.0.0",
+          "platforms": [
+            "desktop",
+            "mobile"
+          ],
+          "permissions": [],
+          "prerelease": false
+        }
+      ]
+    },
+    {
+      "id": "focus-timer",
+      "name": "专注番茄钟",
+      "description": "可交互的专注/休息循环、会话计数与目标进度。",
+      "author": "苏书蘅（SuShuHeng）",
+      "license": "Apache-2.0",
+      "path": "diy-plugins/focus-timer",
+      "repository": "SuShuHeng/MyPage",
+      "categories": [
+        "visualization"
+      ],
+      "versions": [
+        {
+          "version": "1.0.0",
+          "releaseTag": "1.0.0",
+          "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/focus-timer_1.0.0.zip",
+          "sha256": "7b819f5e483d673d3dfb75b7875040a13b17dc6b74611c512a962999cc8ff88a",
           "minMyPageVersion": "1.0.0",
           "platforms": [
             "desktop",
@@ -35,7 +61,7 @@
       "id": "hexo-insights",
       "name": "可配置博客生命周期",
       "description": "以可配置规则对比 Vault 原稿、外部发布目录与 Git 状态；核心不包含任何 Hexo 业务逻辑。",
-      "author": "MyPage Contributors",
+      "author": "苏书蘅（SuShuHeng）",
       "license": "Apache-2.0",
       "path": "diy-plugins/hexo-insights",
       "repository": "SuShuHeng/MyPage",
@@ -51,7 +77,7 @@
           "version": "1.0.0",
           "releaseTag": "1.0.0",
           "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/hexo-insights_1.0.0.zip",
-          "sha256": "abf1dbf463cf811cf07bc5d3c9f2024ca3f4be4dd3c2e174663ceb1330636a41",
+          "sha256": "46e12f66e0c12b256cb581ec039ee8fe880a710f2dea7ca66def8588cff20670",
           "minMyPageVersion": "1.0.0",
           "platforms": [
             "desktop"
@@ -67,6 +93,42 @@
               "capability": "git.read",
               "scope": {
                 "repositories": []
+              }
+            }
+          ],
+          "prerelease": false
+        }
+      ]
+    },
+    {
+      "id": "weather-widget",
+      "name": "天气",
+      "description": "通过用户授权的 Open-Meteo 网络范围显示当前位置天气。",
+      "author": "苏书蘅（SuShuHeng）",
+      "license": "Apache-2.0",
+      "path": "diy-plugins/weather-widget",
+      "repository": "SuShuHeng/MyPage",
+      "categories": [
+        "visualization"
+      ],
+      "versions": [
+        {
+          "version": "1.0.0",
+          "releaseTag": "1.0.0",
+          "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/weather-widget_1.0.0.zip",
+          "sha256": "d96f82529fe5c66f4d372029adfa8f0d39a3642db3345fcecbe71be476a215f6",
+          "minMyPageVersion": "1.0.0",
+          "platforms": [
+            "desktop",
+            "mobile"
+          ],
+          "permissions": [
+            {
+              "capability": "network.request",
+              "scope": {
+                "domains": [
+                  "api.open-meteo.com"
+                ]
               }
             }
           ],

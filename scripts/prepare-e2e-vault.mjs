@@ -16,6 +16,19 @@ await cp(source, vault, {
   recursive: true,
   filter: (entry) => !entry.includes(`${path.sep}.git${path.sep}`),
 });
+const pluginTarget = path.join(vault, ".obsidian", "plugins", "mypage");
+await mkdir(pluginTarget, { recursive: true });
+for (const name of ["main.js", "manifest.json", "styles.css", "versions.json"]) {
+  await cp(path.join(root, name), path.join(pluginTarget, name), { force: true });
+}
+await cp(path.join(root, "diy-plugins"), path.join(pluginTarget, "diy-plugins"), {
+  recursive: true,
+  force: true,
+});
+await cp(path.join(root, "assets"), path.join(pluginTarget, "assets"), {
+  recursive: true,
+  force: true,
+});
 await writeFile(
   path.join(profile, "obsidian.json"),
   JSON.stringify({

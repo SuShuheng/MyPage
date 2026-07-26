@@ -23,4 +23,18 @@ describe("EditSessionManager groups", () => {
     session.redo();
     expect(Object.keys(session.snapshot.groups)).toHaveLength(1);
   });
+
+  it("returns the exact pre-edit layout when the session is cancelled", () => {
+    const settings = createDefaultSettings();
+    const before =
+      settings.widgetInstances["widget-total-notes"]?.layouts.desktop;
+    const session = new EditSessionManager(settings, "dashboard-home");
+    session.updateLayouts("desktop", {
+      "widget-total-notes": { x: 7, y: 9, w: 5, h: 6 },
+    });
+    const cancelled = session.cancel();
+    expect(cancelled.widgets["widget-total-notes"]?.layouts.desktop).toEqual(
+      before,
+    );
+  });
 });

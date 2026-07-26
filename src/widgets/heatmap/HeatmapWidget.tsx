@@ -38,9 +38,9 @@ export function HeatmapWidget({ dataEngine, binding, widget }: BuiltInWidgetProp
         show: false,
         inRange: {
           color: [
-            "color-mix(in srgb, var(--interactive-accent) 28%, var(--background-primary-alt))",
-            "color-mix(in srgb, var(--interactive-accent) 62%, var(--background-primary-alt))",
-            "var(--interactive-accent)",
+            "color-mix(in srgb, var(--mypage-accent) 28%, var(--mypage-card-background))",
+            "color-mix(in srgb, var(--mypage-accent) 62%, var(--mypage-card-background))",
+            "var(--mypage-accent)",
           ],
         },
       },
@@ -53,17 +53,19 @@ export function HeatmapWidget({ dataEngine, binding, widget }: BuiltInWidgetProp
         cellSize: ["auto", 12],
         splitLine: { show: false },
         itemStyle: {
-          borderColor: "var(--background-primary-alt)",
+          borderColor: "var(--mypage-card-background)",
           borderWidth: 1,
         },
         dayLabel: {
-          color: "var(--text-muted)",
+          show: widget.config.showYAxisLabels !== false,
+          color: "var(--mypage-muted-text)",
           firstDay: 1,
           fontSize: 9,
           nameMap: "ZH",
         },
         monthLabel: {
-          color: "var(--text-muted)",
+          show: widget.config.showXAxisLabels !== false,
+          color: "var(--mypage-muted-text)",
           fontSize: 9,
           nameMap: "ZH",
         },
@@ -91,7 +93,7 @@ export function HeatmapWidget({ dataEngine, binding, widget }: BuiltInWidgetProp
         },
       ],
     };
-  }, [range.endDate, range.from, range.startDate, range.to, state]);
+  }, [range.endDate, range.from, range.startDate, range.to, state, widget.config]);
 
   if (state.status === "loading") return <WidgetLoading />;
   if (state.status === "error") return <WidgetError message={state.message} />;

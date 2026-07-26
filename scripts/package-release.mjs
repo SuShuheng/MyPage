@@ -15,6 +15,15 @@ for (const name of names) {
   await writeFile(path.join(output, name), bytes);
   sums.push(`${createHash("sha256").update(bytes).digest("hex")}  ${name}`);
 }
+const iconBytes = new Uint8Array(
+  await readFile(path.join("assets", "mypage-icon.png")),
+);
+files["assets/mypage-icon.png"] = iconBytes;
+await mkdir(path.join(output, "assets"), { recursive: true });
+await writeFile(path.join(output, "assets", "mypage-icon.png"), iconBytes);
+sums.push(
+  `${createHash("sha256").update(iconBytes).digest("hex")}  assets/mypage-icon.png`,
+);
 try {
   for (const name of await readdir(path.join("dist", "modules"))) {
     if (!name.endsWith(".zip")) continue;

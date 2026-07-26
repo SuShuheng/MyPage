@@ -18,6 +18,9 @@ for (const directory of await moduleDirectories(moduleRoot)) {
   const errors = await validateModule(directory);
   if (errors.length > 0) throw new Error(`${directory}: ${errors.join("; ")}`);
   const { manifest } = await readModule(directory);
+  if (manifest.id === "hello-widget") {
+    continue;
+  }
   const archive = await createModuleZip(directory);
   const filename = `${manifest.id}_${manifest.version}.zip`;
   await writeFile(path.join(output, filename), archive);

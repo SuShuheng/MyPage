@@ -23,6 +23,13 @@
       "format": "field-name",
       "minLength": 1
     },
+    "sourceFolder": {
+      "type": "string",
+      "title": "原稿文件夹",
+      "description": "仅统计此 Vault 文件夹及其子文件夹；例如 05 博客。留空表示全部笔记。",
+      "default": "05 博客",
+      "format": "vault-folder"
+    },
     "publishedExtension": {
       "type": "string",
       "title": "发布文件扩展名",

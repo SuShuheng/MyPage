@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "focus-timer",
+  "name": "专注番茄钟",
+  "version": "1.0.0",
+  "description": "可交互的专注/休息循环、会话计数与目标进度。",
+  "author": "苏书蘅（SuShuHeng）",
+  "license": "Apache-2.0",
+  "minMyPageVersion": "1.0.0",
+  "platforms": ["desktop", "mobile"],
+  "entry": "main.js",
+  "styles": "styles.css",
+  "configSchema": "config.schema.json",
+  "trust": "trusted",
+  "permissions": [],
+  "contributions": [
+    {
+      "id": "pomodoro",
+      "kind": "widget",
+      "name": "专注番茄钟",
+      "description": "开始、暂停和重置专注循环。",
+      "icon": "timer",
+      "defaultSize": { "w": 4, "h": 4 },
+      "configSchema": "config.schema.json"
+    }
+  ]
+}

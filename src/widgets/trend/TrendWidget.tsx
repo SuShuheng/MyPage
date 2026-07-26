@@ -18,20 +18,25 @@ export function TrendWidget({ dataEngine, binding, widget }: BuiltInWidgetProps)
     }
     const data = [...counts.entries()].sort(([left], [right]) => left.localeCompare(right));
     return {
-      color: ["var(--interactive-accent)"],
+      color: ["var(--mypage-accent)"],
       tooltip: { trigger: "axis" },
       grid: { top: 12, right: 12, bottom: 28, left: 34 },
       xAxis: {
         type: "category",
         data: data.map(([date]) => date),
-        axisLabel: { color: "var(--text-muted)", hideOverlap: true },
-        axisLine: { lineStyle: { color: "var(--background-modifier-border)" } },
+        axisLabel: {
+          show: widget.config.showXAxisLabels !== false,
+          color: "var(--mypage-muted-text)",
+          hideOverlap: true,
+          formatter: labelFormatter(widget.config),
+        },
+        axisLine: { lineStyle: { color: "var(--mypage-border)" } },
       },
       yAxis: {
         type: "value",
         minInterval: 1,
-        axisLabel: { color: "var(--text-muted)" },
-        splitLine: { lineStyle: { color: "var(--background-modifier-border)" } },
+        axisLabel: { show: widget.config.showYAxisLabels !== false, color: "var(--mypage-muted-text)" },
+        splitLine: { lineStyle: { color: "var(--mypage-border)" } },
       },
       dataZoom: [{ type: "inside" }],
       series: [{
@@ -44,7 +49,7 @@ export function TrendWidget({ dataEngine, binding, widget }: BuiltInWidgetProps)
         data: data.map(([, count]) => count),
       }],
     };
-  }, [state, widget.config.mode]);
+  }, [state, widget.config]);
   if (state.status === "loading") return <WidgetLoading />;
   if (state.status === "error") return <WidgetError message={state.message} />;
   if (state.status === "empty") return <WidgetEmpty />;
@@ -54,4 +59,11 @@ export function TrendWidget({ dataEngine, binding, widget }: BuiltInWidgetProps)
       <small class="mypage-chart-summary">支持悬停详情与触控缩放。</small>
     </div>
   );
+}
+
+function labelFormatter(config: Record<string, unknown>) {
+  const truncate = config.truncateAxisLabels !== false;
+  const limit = Math.max(4, Number(config.axisLabelMaxLength ?? 12));
+  return (value: string) =>
+    truncate && value.length > limit ? `${value.slice(0, limit)}…` : value;
 }

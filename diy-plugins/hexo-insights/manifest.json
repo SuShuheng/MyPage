@@ -4,7 +4,7 @@
   "name": "可配置博客生命周期",
   "version": "1.0.0",
   "description": "以可配置规则对比 Vault 原稿、外部发布目录与 Git 状态；核心不包含任何 Hexo 业务逻辑。",
-  "author": "MyPage Contributors",
+  "author": "苏书蘅（SuShuHeng）",
   "license": "Apache-2.0",
   "minMyPageVersion": "1.0.0",
   "platforms": ["desktop"],

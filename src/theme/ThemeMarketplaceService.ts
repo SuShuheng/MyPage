@@ -25,6 +25,27 @@ export class ThemeMarketplaceService {
     return structuredClone(OFFICIAL_THEMES);
   }
 
+  public async syncInstalledOfficialThemes(): Promise<void> {
+    const snapshot = this.store.snapshot;
+    const installed = OFFICIAL_THEMES.filter(
+      (theme) => snapshot.themeProfiles[theme.id]?.sourceType === "official",
+    );
+    if (installed.length === 0) return;
+    await this.store.update(
+      (draft) => {
+        for (const theme of installed) {
+          draft.themeProfiles[theme.id] = {
+            ...structuredClone(theme),
+            sourceType: "official",
+            sourceId: "official",
+          };
+        }
+      },
+      snapshot.revision,
+      "sync-official-themes",
+    );
+  }
+
   public listThirdPartySources(): ThemeMarketplaceSource[] {
     return Object.values(this.store.snapshot.themeMarkets ?? {});
   }

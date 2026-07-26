@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "calendar-widget",
+  "name": "交互日历",
+  "version": "1.0.0",
+  "description": "主题自适应的月历、日期定位与周起始日配置。",
+  "author": "苏书蘅（SuShuHeng）",
+  "license": "Apache-2.0",
+  "minMyPageVersion": "1.0.0",
+  "platforms": ["desktop", "mobile"],
+  "entry": "main.js",
+  "styles": "styles.css",
+  "configSchema": "config.schema.json",
+  "trust": "trusted",
+  "permissions": [],
+  "contributions": [
+    {
+      "id": "month-calendar",
+      "kind": "widget",
+      "name": "交互日历",
+      "description": "浏览月份并快速回到今天。",
+      "icon": "calendar-days",
+      "defaultSize": { "w": 5, "h": 5 },
+      "configSchema": "config.schema.json"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import type { ActionExecutor } from "../actions/ActionExecutor";
 import type { ModuleRuntime } from "../modules/ModuleRuntime";
 import type { ThemeService } from "../theme/ThemeService";
 import type { ModuleManager } from "../modules/ModuleManager";
+import type { CapabilityBroker } from "../permissions/CapabilityBroker";
 
 export class MyPageView extends ItemView {
   public constructor(
@@ -19,6 +20,8 @@ export class MyPageView extends ItemView {
     private readonly moduleRuntime: ModuleRuntime,
     private readonly themeService: ThemeService,
     private readonly moduleManager: ModuleManager,
+    private readonly capabilityBroker: CapabilityBroker,
+    private readonly onRefresh: () => Promise<void>,
     private readonly onOpenMarketplace: () => void,
     private readonly onImportModuleZip: () => void,
   ) {
@@ -49,6 +52,8 @@ export class MyPageView extends ItemView {
         moduleRuntime={this.moduleRuntime}
         themeService={this.themeService}
         moduleManager={this.moduleManager}
+        capabilityBroker={this.capabilityBroker}
+        onRefresh={this.onRefresh}
         onOpenMarketplace={this.onOpenMarketplace}
         onImportModuleZip={this.onImportModuleZip}
       />,

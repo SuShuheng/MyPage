@@ -113,6 +113,8 @@ export interface WidgetAppearance {
   showIcon: boolean;
   showBackground: boolean;
   showBorder: boolean;
+  contentScale?: number;
+  iconScale?: number;
   customClass?: string;
   themeOverrides?: Partial<ThemeTokens>;
 }
@@ -202,8 +204,21 @@ export interface ThemeProfile {
   sourceId?: string;
   fontFamily?: string;
   backgroundImage?: string;
+  backgroundFit?: "cover" | "contain" | "stretch" | "auto";
+  backgroundPosition?: "center" | "top" | "bottom" | "left" | "right";
+  backgroundRepeat?: "no-repeat" | "repeat" | "repeat-x" | "repeat-y";
+  backgroundAttachment?: "scroll" | "fixed";
+  backgroundOverlay?: string;
+  backgroundOverlayOpacity?: number;
+  pagePadding?: number;
+  maxContentWidth?: number;
+  fontScale?: number;
   motionScale?: number;
   preview?: string;
+  variants?: {
+    light: Partial<ThemeTokens>;
+    dark: Partial<ThemeTokens>;
+  };
 }
 
 export interface ModuleInstallation {
@@ -327,6 +342,7 @@ export interface MyPageSettingsV1 {
     draftRetentionDays: number;
     backupRetention: number;
     workerCount: number | "auto";
+    refreshIntervalMs: number;
     debug: boolean;
   };
   editDrafts: Record<string, EditDraft>;

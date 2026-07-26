@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "firstDay": { "type": "integer", "title": "每周起始日", "description": "0 为周日，1 为周一。", "enum": [0, 1], "default": 1 },
+    "showAdjacentDays": { "type": "boolean", "title": "显示相邻月份日期", "description": "在月首与月末补齐日期。", "default": true },
+    "showWeekdayLabels": { "type": "boolean", "title": "显示星期标签", "default": true }
+  }
+}

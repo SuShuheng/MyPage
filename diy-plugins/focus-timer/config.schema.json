@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "focusMinutes": { "type": "integer", "title": "专注分钟", "description": "每次专注阶段的时长。", "minimum": 1, "maximum": 180, "default": 25 },
+    "breakMinutes": { "type": "integer", "title": "休息分钟", "description": "每次休息阶段的时长。", "minimum": 1, "maximum": 60, "default": 5 },
+    "dailyTarget": { "type": "integer", "title": "每日目标", "description": "希望完成的专注会话数。", "minimum": 1, "maximum": 24, "default": 8 },
+    "autoStartBreak": { "type": "boolean", "title": "自动开始休息", "description": "专注结束后自动进入休息倒计时。", "default": false }
+  }
+}
