@@ -12,7 +12,6 @@ import {
 import type MyPagePlugin from "../app/MyPagePlugin";
 import { MY_PAGE_ICON } from "../app/constants";
 import { ModulePermissionModal } from "../permissions/ModulePermissionModal";
-import { ModuleSettingsModal } from "../modules/ModuleSettingsModal";
 import { confirmDialog, promptDialog } from "../components/ThemeDialog";
 import type {
   ModuleInstallation,
@@ -55,9 +54,9 @@ export class MyPageSettingTab extends PluginSettingTab {
   private activeTab: SettingsTabId = "general";
   private marketSourceId = "official";
   private marketSearch = "";
-  private marketStatus = "all";
-  private marketPlatform = "all";
-  private marketType = "all";
+  private readonly marketStatuses = new Set<string>();
+  private readonly marketPlatforms = new Set<string>();
+  private readonly marketTypes = new Set<string>();
   private selectedModuleId = "";
   private marketLoading = false;
   private marketMessage = "";
@@ -67,6 +66,8 @@ export class MyPageSettingTab extends PluginSettingTab {
   private themeSearch = "";
   private themeLoading = false;
   private inlineMarketComponent: Component | undefined;
+  private marketSearchTimer: number | undefined;
+  private themeSearchTimer: number | undefined;
 
   public constructor(
     app: App,
@@ -81,6 +82,7 @@ export class MyPageSettingTab extends PluginSettingTab {
   }
 
   public override display(): void {
+    this.clearSearchTimers();
     this.disposeInlineMarketComponent();
     const { containerEl } = this;
     containerEl.empty();
@@ -123,6 +125,7 @@ export class MyPageSettingTab extends PluginSettingTab {
   }
 
   public override hide(): void {
+    this.clearSearchTimers();
     this.disposeInlineMarketComponent();
     super.hide();
   }
@@ -689,6 +692,7 @@ export class MyPageSettingTab extends PluginSettingTab {
       this.selectedThemeId = "";
       this.display();
     });
+    const resultListRef: { current?: HTMLElement } = {};
     const search = toolbar.createEl("input", {
       type: "search",
       placeholder: "搜索主题名称、作者或风格",
@@ -697,7 +701,19 @@ export class MyPageSettingTab extends PluginSettingTab {
     search.value = this.themeSearch;
     search.addEventListener("input", () => {
       this.themeSearch = search.value;
-      window.setTimeout(() => this.display(), 120);
+      if (this.themeSearchTimer !== undefined) {
+        window.clearTimeout(this.themeSearchTimer);
+      }
+      this.themeSearchTimer = window.setTimeout(() => {
+        if (resultListRef.current?.isConnected) {
+          this.renderThemeResults(
+            resultListRef.current,
+            themes,
+            Boolean(selectedTheme),
+          );
+        }
+        this.themeSearchTimer = undefined;
+      }, 120);
     });
     if (this.themeSourceId !== "official") {
       const check = toolbar.createEl("button", {
@@ -740,19 +756,14 @@ export class MyPageSettingTab extends PluginSettingTab {
           }),
         );
     }
-    const query = this.themeSearch.trim().toLocaleLowerCase();
-    const filtered = themes.filter((theme) =>
-      !query ||
-      [theme.name, theme.description, theme.author]
-        .some((value) => value?.toLocaleLowerCase().includes(query)),
-    );
-    const list = catalog.createDiv(
+    resultListRef.current = catalog.createDiv(
       selectedTheme ? "mypage-market-sidebar-list" : "mypage-theme-grid",
     );
-    this.renderThemeCards(list, filtered, Boolean(selectedTheme));
-    if (filtered.length === 0) {
-      list.createEl("p", { text: "没有符合筛选条件的主题。", cls: "mypage-market-empty" });
-    }
+    this.renderThemeResults(
+      resultListRef.current,
+      themes,
+      Boolean(selectedTheme),
+    );
     if (selectedTheme) {
       const detail = browser.createEl("main", {
         cls: "mypage-market-inline-detail",
@@ -819,6 +830,16 @@ export class MyPageSettingTab extends PluginSettingTab {
       this.marketMessage = "";
       this.display();
     });
+    const resultListRef: { current?: HTMLElement } = {};
+    const refreshResults = () => {
+      if (resultListRef.current?.isConnected && index) {
+        this.renderModuleIndex(
+          resultListRef.current,
+          index,
+          Boolean(selectedModule),
+        );
+      }
+    };
     const search = toolbar.createEl("input", {
       type: "search",
       placeholder: "搜索 DIY 模块",
@@ -827,51 +848,15 @@ export class MyPageSettingTab extends PluginSettingTab {
     search.value = this.marketSearch;
     search.addEventListener("input", () => {
       this.marketSearch = search.value;
-      window.setTimeout(() => this.display(), 120);
+      if (this.marketSearchTimer !== undefined) {
+        window.clearTimeout(this.marketSearchTimer);
+      }
+      this.marketSearchTimer = window.setTimeout(() => {
+        refreshResults();
+        this.marketSearchTimer = undefined;
+      }, 120);
     });
-    const status = toolbar.createEl("select", {
-      attr: { "aria-label": "安装状态筛选" },
-    });
-    for (const [value, label] of [
-      ["all", "全部状态"],
-      ["installed", "已安装"],
-      ["update", "可更新"],
-      ["uninstalled", "未安装"],
-    ] as const) status.createEl("option", { value, text: label });
-    status.value = this.marketStatus;
-    status.addEventListener("change", () => {
-      this.marketStatus = status.value;
-      this.display();
-    });
-    const platform = toolbar.createEl("select", {
-      attr: { "aria-label": "平台筛选" },
-    });
-    for (const [value, label] of [
-      ["all", "全部平台"],
-      ["desktop", "桌面端"],
-      ["mobile", "移动端"],
-    ] as const) platform.createEl("option", { value, text: label });
-    platform.value = this.marketPlatform;
-    platform.addEventListener("change", () => {
-      this.marketPlatform = platform.value;
-      this.display();
-    });
-    const type = toolbar.createEl("select", {
-      attr: { "aria-label": "模块类型筛选" },
-    });
-    for (const [value, label] of [
-      ["all", "全部类型"],
-      ["visualization", "可视化组件"],
-      ["data", "数据与转换"],
-      ["actions", "快捷操作"],
-      ["templates", "主页模板"],
-      ["settings", "设置扩展"],
-    ] as const) type.createEl("option", { value, text: label });
-    type.value = this.marketType;
-    type.addEventListener("change", () => {
-      this.marketType = type.value;
-      this.display();
-    });
+    this.renderModuleFilterMenu(toolbar, refreshResults);
     const check = toolbar.createEl("button", {
       text:
         this.marketLoading
@@ -928,7 +913,12 @@ export class MyPageSettingTab extends PluginSettingTab {
       });
       return;
     }
-    this.renderModuleIndex(catalog, index, Boolean(selectedModule));
+    resultListRef.current = catalog.createDiv("mypage-market-results");
+    this.renderModuleIndex(
+      resultListRef.current,
+      index,
+      Boolean(selectedModule),
+    );
     if (selectedModule) {
       const status = this.myPagePlugin.marketplace
         .updateStatuses(index)
@@ -1008,22 +998,6 @@ export class MyPageSettingTab extends PluginSettingTab {
           module.id,
           this.myPagePlugin.moduleManager,
           this.myPagePlugin.permissions,
-        ).open();
-      });
-      button(actions, "模块配置", () => {
-        new ModuleSettingsModal(
-          this.app,
-          module.id,
-          this.myPagePlugin.moduleManager,
-          this.myPagePlugin.settingsStore,
-          this.myPagePlugin.workers,
-          this.myPagePlugin.secrets,
-          this.myPagePlugin.capabilityBroker,
-          async () => {
-            await this.myPagePlugin.moduleRuntime.restartDataSources(
-              this.myPagePlugin.dataEngine,
-            );
-          },
         ).open();
       });
       button(actions, "详情", () => {
@@ -1184,6 +1158,29 @@ export class MyPageSettingTab extends PluginSettingTab {
       );
   }
 
+  private renderThemeResults(
+    container: HTMLElement,
+    themes: ThemeProfile[],
+    compact: boolean,
+  ): void {
+    container.empty();
+    const query = this.themeSearch.trim().toLocaleLowerCase();
+    const filtered = themes.filter(
+      (theme) =>
+        !query ||
+        [theme.name, theme.description, theme.author].some((value) =>
+          value?.toLocaleLowerCase().includes(query),
+        ),
+    );
+    this.renderThemeCards(container, filtered, compact);
+    if (filtered.length === 0) {
+      container.createEl("p", {
+        text: "没有符合筛选条件的主题。",
+        cls: "mypage-market-empty",
+      });
+    }
+  }
+
   private renderThemeCards(
     container: HTMLElement,
     themes: ThemeProfile[],
@@ -1221,11 +1218,123 @@ export class MyPageSettingTab extends PluginSettingTab {
     }
   }
 
+  private renderModuleFilterMenu(
+    container: HTMLElement,
+    refreshResults: () => void,
+  ): void {
+    const filter = container.createEl("details", {
+      cls: "mypage-market-filter",
+    });
+    const summary = filter.createEl("summary", {
+      attr: { "aria-label": "打开模块筛选选项" },
+    });
+    const icon = summary.createSpan("mypage-market-filter-icon");
+    setIcon(icon, "list-filter");
+    summary.createSpan({ text: "筛选" });
+    const count = summary.createSpan("mypage-market-filter-count");
+    const updateCount = () => {
+      const active =
+        this.marketStatuses.size +
+        this.marketPlatforms.size +
+        this.marketTypes.size;
+      count.setText(active > 0 ? String(active) : "");
+      count.toggleClass("is-empty", active === 0);
+    };
+
+    const panel = filter.createDiv("mypage-market-filter-popover");
+    this.renderCheckboxFilterGroup(
+      panel,
+      "安装状态",
+      [
+        ["installed", "已安装"],
+        ["update", "可更新"],
+        ["uninstalled", "未安装"],
+      ],
+      this.marketStatuses,
+      () => {
+        updateCount();
+        refreshResults();
+      },
+    );
+    this.renderCheckboxFilterGroup(
+      panel,
+      "适用平台",
+      [
+        ["desktop", "桌面端"],
+        ["mobile", "移动端"],
+      ],
+      this.marketPlatforms,
+      () => {
+        updateCount();
+        refreshResults();
+      },
+    );
+    this.renderCheckboxFilterGroup(
+      panel,
+      "模块类型",
+      [
+        ["visualization", "可视化组件"],
+        ["data", "数据与转换"],
+        ["actions", "快捷操作"],
+        ["templates", "主页模板"],
+        ["settings", "设置扩展"],
+      ],
+      this.marketTypes,
+      () => {
+        updateCount();
+        refreshResults();
+      },
+    );
+    const footer = panel.createDiv("mypage-market-filter-footer");
+    const reset = footer.createEl("button", {
+      text: "清除筛选",
+      attr: { type: "button" },
+    });
+    reset.addEventListener("click", () => {
+      this.marketStatuses.clear();
+      this.marketPlatforms.clear();
+      this.marketTypes.clear();
+      for (const checkbox of panel.querySelectorAll<HTMLInputElement>(
+        "input[type='checkbox']",
+      )) {
+        checkbox.checked = false;
+      }
+      updateCount();
+      refreshResults();
+    });
+    updateCount();
+  }
+
+  private renderCheckboxFilterGroup(
+    container: HTMLElement,
+    title: string,
+    options: Array<readonly [string, string]>,
+    selected: Set<string>,
+    onChange: () => void,
+  ): void {
+    const group = container.createEl("fieldset", {
+      cls: "mypage-market-filter-group",
+    });
+    group.createEl("legend", { text: title });
+    for (const [value, label] of options) {
+      const row = group.createEl("label");
+      const checkbox = row.createEl("input", { type: "checkbox" });
+      checkbox.checked = selected.has(value);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) selected.add(value);
+        else selected.delete(value);
+        onChange();
+      });
+      row.createSpan({ text: label });
+    }
+  }
+
   private renderModuleIndex(
     container: HTMLElement,
     index: MarketIndex,
     compact = false,
   ): void {
+    container.empty();
     const statuses = new Map(
       this.myPagePlugin.marketplace
         .updateStatuses(index)
@@ -1240,17 +1349,22 @@ export class MyPageSettingTab extends PluginSettingTab {
           (value) => value.toLocaleLowerCase().includes(query),
         );
       const matchesStatus =
-        this.marketStatus === "all" ||
-        (this.marketStatus === "installed" && Boolean(status?.installedVersion)) ||
-        (this.marketStatus === "update" && Boolean(status?.updateAvailable)) ||
-        (this.marketStatus === "uninstalled" && !status?.installedVersion);
+        this.marketStatuses.size === 0 ||
+        (this.marketStatuses.has("installed") &&
+          Boolean(status?.installedVersion)) ||
+        (this.marketStatuses.has("update") &&
+          Boolean(status?.updateAvailable)) ||
+        (this.marketStatuses.has("uninstalled") &&
+          !status?.installedVersion);
       const platforms = status?.latestVersion?.platforms ?? [];
       const matchesPlatform =
-        this.marketPlatform === "all" ||
-        platforms.includes(this.marketPlatform as "desktop" | "mobile");
+        this.marketPlatforms.size === 0 ||
+        platforms.some((platform) => this.marketPlatforms.has(platform));
       const matchesType =
-        this.marketType === "all" ||
-        (module.categories ?? []).includes(this.marketType);
+        this.marketTypes.size === 0 ||
+        (module.categories ?? []).some((category) =>
+          this.marketTypes.has(category),
+        );
       return matchesSearch && matchesStatus && matchesPlatform && matchesType;
     });
     const grid = container.createDiv(
@@ -1454,6 +1568,38 @@ export class MyPageSettingTab extends PluginSettingTab {
     this.inlineMarketComponent = undefined;
   }
 
+  private clearSearchTimers(): void {
+    if (this.marketSearchTimer !== undefined) {
+      window.clearTimeout(this.marketSearchTimer);
+      this.marketSearchTimer = undefined;
+    }
+    if (this.themeSearchTimer !== undefined) {
+      window.clearTimeout(this.themeSearchTimer);
+      this.themeSearchTimer = undefined;
+    }
+  }
+
+  private redisplayAfterSearch(ariaLabel: string): void {
+    const active = document.activeElement;
+    if (
+      active instanceof HTMLInputElement &&
+      active.type === "search" &&
+      active.getAttribute("aria-label") === ariaLabel
+    ) {
+      active.addEventListener(
+        "blur",
+        () => {
+          window.setTimeout(() => {
+            if (this.containerEl.isConnected) this.display();
+          }, 0);
+        },
+        { once: true },
+      );
+      return;
+    }
+    this.display();
+  }
+
   private async readInstalledModuleReadme(
     moduleId: string,
   ): Promise<string | undefined> {
@@ -1486,7 +1632,7 @@ export class MyPageSettingTab extends PluginSettingTab {
         error instanceof Error ? error.message : String(error);
     } finally {
       this.marketLoading = false;
-      this.display();
+      this.redisplayAfterSearch("搜索 DIY 模块");
     }
   }
 
@@ -1501,7 +1647,7 @@ export class MyPageSettingTab extends PluginSettingTab {
       new Notice(error instanceof Error ? error.message : String(error), 10_000);
     } finally {
       this.themeLoading = false;
-      this.display();
+      this.redisplayAfterSearch("搜索主题");
     }
   }
 

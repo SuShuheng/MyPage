@@ -74,6 +74,14 @@ describe("GridStackAdapter edit lifecycle", () => {
     expect(gridMocks.init).toHaveBeenCalledTimes(1);
     expect(gridMocks.destroy).not.toHaveBeenCalled();
   });
+
+  it("does not expose the grid name as a hover tooltip", () => {
+    const view = renderAdapter();
+    const grid = view.container.querySelector(".mypage-grid");
+    expect(grid?.getAttribute("aria-label")).toBeNull();
+    expect(grid?.getAttribute("title")).toBeNull();
+    expect(grid?.getAttribute("role")).toBe("group");
+  });
 });
 
 function renderAdapter() {

@@ -152,12 +152,21 @@ export interface DashboardGroup {
   appearance: WidgetAppearance;
 }
 
+export interface DashboardHeader {
+  title: string;
+  subtitle: string;
+  titleFontSize: number;
+  subtitleFontSize: number;
+  showSummary: boolean;
+}
+
 export interface Dashboard {
   id: string;
   name: string;
   icon?: string;
   hidden: boolean;
   themeProfileId?: string;
+  header?: DashboardHeader;
   groupIds: string[];
   widgetIds: string[];
   gridOptions: GridOptions;

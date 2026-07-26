@@ -37,4 +37,21 @@ describe("EditSessionManager groups", () => {
       before,
     );
   });
+
+  it("keeps page header changes inside the edit session until commit", () => {
+    const settings = createDefaultSettings();
+    const session = new EditSessionManager(settings, "dashboard-home");
+    session.updateHeader({
+      title: "创作工作台",
+      subtitle: "今天也写一点",
+      titleFontSize: 42,
+      subtitleFontSize: 14,
+      showSummary: false,
+    });
+    expect(session.snapshot.dashboard.header?.title).toBe("创作工作台");
+    const cancelled = session.cancel();
+    expect(cancelled.dashboard.header).toEqual(
+      settings.dashboards["dashboard-home"]?.header,
+    );
+  });
 });

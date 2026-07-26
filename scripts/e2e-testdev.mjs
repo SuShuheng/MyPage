@@ -205,7 +205,41 @@ try {
     "TODO create uses themed confirmation; completed task stays visible at bottom with time and context action",
   );
 
-  await page.getByRole("button", { name: "编辑" }).click();
+  await page.locator(".mypage-tab.is-active").click({ button: "right" });
+  await page.getByText("编辑主页", { exact: true }).click();
+  if (
+    (await page.getByRole("button", { name: "刷新数据" }).count()) !== 0 ||
+    (await page.getByRole("button", { name: "编辑" }).count()) !== 0
+  ) {
+    throw new Error("Legacy dashboard refresh/edit buttons are still visible.");
+  }
+  const headerModalTrigger = page.getByRole("button", { name: /页头设置/ });
+  await headerModalTrigger.click();
+  const headerModal = page.locator(".mypage-dashboard-header-modal");
+  await headerModal.waitFor({ state: "visible", timeout: 10_000 });
+  await headerModal
+    .locator(".setting-item")
+    .filter({ hasText: "标题" })
+    .first()
+    .locator("input[type='text']")
+    .fill("MyPage E2E 工作台");
+  await headerModal
+    .locator(".setting-item")
+    .filter({ hasText: "显示主页统计" })
+    .locator("input[type='checkbox']")
+    .uncheck();
+  await headerModal
+    .getByRole("button", { name: "应用到编辑会话" })
+    .click();
+  await page
+    .getByRole("heading", { name: "MyPage E2E 工作台" })
+    .waitFor({ state: "visible" });
+  if ((await page.locator(".mypage-dashboard-summary").count()) !== 0) {
+    throw new Error("Dashboard header summary toggle did not hide the summary.");
+  }
+  evidence.assertions.push(
+    "Tab context menu enters edit mode; header title/size/summary are configurable and legacy top-right refresh/edit actions are absent",
+  );
   const editModeWidgetMenus = await page.locator(
     ".mypage-widget-header > .mypage-icon-button",
   ).count();
@@ -643,6 +677,34 @@ try {
   ) {
     throw new Error("Hello Widget is still listed in the official market.");
   }
+  const moduleSearch = settingsRoot.getByRole("searchbox", {
+    name: "搜索 DIY 模块",
+  });
+  await moduleSearch.fill("专注");
+  await page.waitForTimeout(180);
+  if (
+    (await moduleSearch.inputValue()) !== "专注" ||
+    !(await moduleSearch.evaluate(
+      (input) => input === globalThis.document.activeElement,
+    ))
+  ) {
+    throw new Error("Module market search interrupted typing or lost focus.");
+  }
+  await moduleSearch.fill("");
+  await settingsRoot.locator(".mypage-market-filter > summary").click();
+  const moduleFilter = settingsRoot.locator(".mypage-market-filter-popover");
+  await moduleFilter.getByText("安装状态", { exact: true }).waitFor({
+    state: "visible",
+  });
+  await moduleFilter
+    .getByText("可视化组件", { exact: true })
+    .locator("..")
+    .locator("input[type='checkbox']")
+    .check();
+  await moduleFilter.getByRole("button", { name: "清除筛选" }).click();
+  evidence.assertions.push(
+    "Module market uses a floating multi-direction checkbox filter and search keeps focus while results update",
+  );
   const timerMarketCard = settingsRoot
     .locator(".mypage-module-market-card")
     .filter({ hasText: "专注番茄钟" });
@@ -679,6 +741,20 @@ try {
   if ((await settingsRoot.locator(".mypage-theme-card").count()) < 4) {
     throw new Error("Official theme market did not expose the preset themes.");
   }
+  const themeSearch = settingsRoot.getByRole("searchbox", {
+    name: "搜索主题",
+  });
+  await themeSearch.fill("主题");
+  await page.waitForTimeout(180);
+  if (
+    (await themeSearch.inputValue()) !== "主题" ||
+    !(await themeSearch.evaluate(
+      (input) => input === globalThis.document.activeElement,
+    ))
+  ) {
+    throw new Error("Theme market search interrupted typing or lost focus.");
+  }
+  await themeSearch.fill("");
   await settingsRoot
     .locator(".mypage-theme-card")
     .first()
@@ -733,22 +809,12 @@ try {
     "Module permission dialog exposes scoped authorization or its inline scope editor",
   );
   await permissionModal.locator(".modal-close-button").click();
-  await hexoManagement.getByRole("button", { name: "模块配置" }).click();
-  const moduleSettingsModal = page.locator(".mypage-module-settings-modal");
-  await moduleSettingsModal.waitFor({ state: "visible", timeout: 10_000 });
-  for (const tabName of ["内容设置", "通用设置", "高级设置"]) {
-    await moduleSettingsModal.getByRole("tab", { name: tabName }).waitFor({
-      state: "visible",
-    });
+  if (
+    (await hexoManagement.getByRole("button", { name: "模块配置" }).count()) !==
+    0
+  ) {
+    throw new Error("Module management still exposes the removed configuration button.");
   }
-  await moduleSettingsModal
-    .getByText("已发布文章目录", { exact: true })
-    .waitFor({ state: "visible" });
-  await moduleSettingsModal.getByRole("tab", { name: "高级设置" }).click();
-  await moduleSettingsModal.locator(".mypage-json-editor").waitFor({
-    state: "visible",
-  });
-  await moduleSettingsModal.locator(".modal-close-button").click();
   await hexoManagement.getByRole("button", { name: "详情" }).click();
   const managementDetails = page.locator(".mypage-market-details-modal");
   await managementDetails.waitFor({ state: "visible", timeout: 10_000 });
@@ -757,7 +823,7 @@ try {
   });
   await managementDetails.locator(".modal-close-button").click();
   evidence.assertions.push(
-    "Module management aligns content/general/advanced settings and opens README details",
+    "Module management omits the configuration shortcut and keeps README details in a dialog",
   );
   await settingsRoot.getByRole("tab", { name: "关于" }).click();
   await settingsRoot.getByText(`MyPage 1.0.0`, { exact: true }).waitFor({
@@ -818,7 +884,8 @@ try {
   }
   evidence.assertions.push("Theme covers the full dashboard width and header");
 
-  await page.getByRole("button", { name: "编辑" }).click();
+  await page.locator(".mypage-tab.is-active").click({ button: "right" });
+  await page.getByText("编辑主页", { exact: true }).click();
   const beforeCancel = await page.locator(".mypage-widget").count();
   const cancelTarget = page.locator(".grid-stack-item").first();
   const cancelWidgetId = await cancelTarget.getAttribute("data-widget-id");

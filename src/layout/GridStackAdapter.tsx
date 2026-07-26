@@ -96,7 +96,7 @@ export function GridStackAdapter({
       data-snap={String(gridOptions.snap)}
       data-placeholder={String(gridOptions.placeholder)}
       data-live-reflow={String(gridOptions.liveReflow)}
-      aria-label="Dashboard 组件网格"
+      role="group"
     >
       {children}
     </div>

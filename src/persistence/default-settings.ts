@@ -170,6 +170,13 @@ export function createDefaultSettings(): MyPageSettings {
         icon: "layout-dashboard",
         hidden: false,
         themeProfileId: "theme-default",
+        header: {
+          title: "主页",
+          subtitle: "你的知识，一目了然",
+          titleFontSize: 34,
+          subtitleFontSize: 12,
+          showSummary: true,
+        },
         groupIds: [],
         widgetIds: widgets.map((widget) => widget.id),
         gridOptions: structuredClone(DEFAULT_GRID_OPTIONS),

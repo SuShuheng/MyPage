@@ -15,6 +15,7 @@
     "test:security": "vitest run --project security",
     "test:performance": "vitest run --project performance",
     "test:e2e": "node scripts/e2e-testdev.mjs",
+    "test:e2e:current": "node scripts/e2e-current-goal.mjs",
     "e2e:prepare": "node scripts/prepare-e2e-vault.mjs",
     "test:all": "vitest run",
     "test:watch": "vitest",

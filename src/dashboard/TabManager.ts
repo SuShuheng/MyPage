@@ -24,6 +24,13 @@ export class TabManager {
           id: dashboardId,
           name,
           hidden: false,
+          header: {
+            title: name,
+            subtitle: "你的知识，一目了然",
+            titleFontSize: 34,
+            subtitleFontSize: 12,
+            showSummary: true,
+          },
           groupIds: [],
           widgetIds: [],
           gridOptions: structuredClone(DEFAULT_GRID_OPTIONS),
@@ -57,8 +64,18 @@ export class TabManager {
       (draft) => {
         const tab = requireTab(draft.tabs.byId, tabId);
         const dashboard = requireDashboard(draft.dashboards, tab.dashboardId);
+        const previousName = dashboard.name;
         tab.name = trimmed;
         dashboard.name = trimmed;
+        if (!dashboard.header || dashboard.header.title === previousName) {
+          dashboard.header = {
+            title: trimmed,
+            subtitle: dashboard.header?.subtitle ?? "你的知识，一目了然",
+            titleFontSize: dashboard.header?.titleFontSize ?? 34,
+            subtitleFontSize: dashboard.header?.subtitleFontSize ?? 12,
+            showSummary: dashboard.header?.showSummary ?? true,
+          };
+        }
       },
       snapshot.revision,
       "rename-tab",

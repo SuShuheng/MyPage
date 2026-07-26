@@ -21,7 +21,6 @@ export class MyPageView extends ItemView {
     private readonly themeService: ThemeService,
     private readonly moduleManager: ModuleManager,
     private readonly capabilityBroker: CapabilityBroker,
-    private readonly onRefresh: () => Promise<void>,
     private readonly onOpenMarketplace: () => void,
     private readonly onImportModuleZip: () => void,
   ) {
@@ -53,7 +52,6 @@ export class MyPageView extends ItemView {
         themeService={this.themeService}
         moduleManager={this.moduleManager}
         capabilityBroker={this.capabilityBroker}
-        onRefresh={this.onRefresh}
         onOpenMarketplace={this.onOpenMarketplace}
         onImportModuleZip={this.onImportModuleZip}
       />,

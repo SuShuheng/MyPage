@@ -25,4 +25,18 @@ describe("settings schema and graph invariants", () => {
       ]),
     );
   });
+
+  it("accepts older dashboards without header settings", () => {
+    const settings = createDefaultSettings();
+    delete settings.dashboards["dashboard-home"]?.header;
+    expect(validateSettings(settings)).toBe(true);
+  });
+
+  it("rejects header font sizes outside the supported range", () => {
+    const settings = createDefaultSettings();
+    const header = settings.dashboards["dashboard-home"]?.header;
+    if (!header) throw new Error("Default dashboard header is missing.");
+    header.titleFontSize = 100;
+    expect(validateSettings(settings)).toBe(false);
+  });
 });

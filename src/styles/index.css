@@ -1560,15 +1560,19 @@ button.mypage-overlay {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  color: var(--text-on-accent);
-  background: var(--mypage-accent, var(--interactive-accent));
-  box-shadow: 0 10px 30px color-mix(in srgb, var(--mypage-accent, var(--interactive-accent)) 28%, transparent);
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
 }
 
 .mypage-settings-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+  width: 36px;
+  height: 36px;
+}
+
+.mypage-settings-logo svg {
+  width: 32px;
+  height: 32px;
 }
 
 .mypage-settings-tabs {
@@ -1678,6 +1682,125 @@ button.mypage-overlay {
   min-height: 38px;
 }
 
+.mypage-market-filter {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.mypage-market-filter > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 6px 10px;
+  color: var(--mypage-text, var(--text-normal));
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
+  border-radius: 8px;
+  background: var(--interactive-normal);
+  box-shadow: var(--input-shadow);
+  cursor: pointer;
+  list-style: none;
+}
+
+.mypage-market-filter > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mypage-market-filter > summary:hover,
+.mypage-market-filter[open] > summary {
+  background: var(--interactive-hover);
+}
+
+.mypage-market-filter > summary:focus-visible {
+  outline: 2px solid var(--mypage-accent, var(--interactive-accent));
+  outline-offset: 2px;
+}
+
+.mypage-market-filter-icon {
+  display: inline-flex;
+}
+
+.mypage-market-filter-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0 5px;
+  color: var(--text-on-accent);
+  border-radius: 999px;
+  background: var(--mypage-accent, var(--interactive-accent));
+  font-size: 10px;
+}
+
+.mypage-market-filter-count.is-empty {
+  display: none;
+}
+
+.mypage-market-filter-popover {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 7px);
+  right: 0;
+  display: grid;
+  width: min(320px, calc(100vw - 48px));
+  padding: 14px;
+  border: 1px solid var(--mypage-border, var(--background-modifier-border));
+  border-radius: 12px;
+  background: var(--background-primary);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 22%);
+}
+
+.mypage-market-filter-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--mypage-border, var(--background-modifier-border));
+}
+
+.mypage-market-filter-group:first-child {
+  padding-top: 0;
+}
+
+.mypage-market-filter-group legend {
+  grid-column: 1 / -1;
+  padding: 0;
+  color: var(--mypage-muted-text, var(--text-muted));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.mypage-market-filter-group label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mypage-market-filter-group input[type="checkbox"] {
+  flex: 0 0 auto;
+  min-height: auto;
+}
+
+.mypage-market-filter-footer {
+  display: flex;
+  justify-content: end;
+  padding-top: 10px;
+}
+
+.mypage-market-filter-footer button {
+  min-height: 32px;
+}
+
+.mypage-market-results {
+  min-width: 0;
+}
+
 .mypage-market-browser {
   margin-top: 14px;
 }
@@ -1723,6 +1846,11 @@ button.mypage-overlay {
 .mypage-market-toolbar.is-sidebar > * {
   width: 100%;
   min-width: 0;
+}
+
+.mypage-market-toolbar.is-sidebar .mypage-market-filter-popover {
+  right: auto;
+  left: 0;
 }
 
 .mypage-market-sidebar-list {
@@ -2069,14 +2197,22 @@ button.mypage-overlay {
 }
 
 .mypage-about-logo {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
+  width: 48px;
+  height: 48px;
 }
 
 .mypage-about-logo svg {
   width: 34px;
   height: 34px;
+}
+
+.mypage-dashboard-header-modal {
+  width: min(620px, calc(100vw - 32px));
+}
+
+.mypage-dashboard-header-modal .setting-item:last-child {
+  margin-top: 10px;
+  border-top: 1px solid var(--mypage-border, var(--background-modifier-border));
 }
 
 .mypage-about-links a {

@@ -29,6 +29,10 @@ import type { ModuleRuntime } from "../modules/ModuleRuntime";
 import type { ThemeService } from "../theme/ThemeService";
 import type { ModuleManager } from "../modules/ModuleManager";
 import { WidgetConfigurationModal } from "./WidgetConfigurationModal";
+import {
+  DashboardHeaderModal,
+  resolveDashboardHeader,
+} from "./DashboardHeaderModal";
 import { confirmDialog, promptDialog } from "../components/ThemeDialog";
 import type { CapabilityBroker } from "../permissions/CapabilityBroker";
 
@@ -41,7 +45,6 @@ interface DashboardShellProps {
   themeService: ThemeService;
   moduleManager: ModuleManager;
   capabilityBroker: CapabilityBroker;
-  onRefresh: () => Promise<void>;
   onOpenMarketplace: () => void;
   onImportModuleZip: () => void;
 }
@@ -55,7 +58,6 @@ export function DashboardShell({
   themeService,
   moduleManager,
   capabilityBroker,
-  onRefresh,
   onOpenMarketplace,
   onImportModuleZip,
 }: DashboardShellProps) {
@@ -63,7 +65,8 @@ export function DashboardShell({
     () => settingsStore.snapshot,
   );
   const [session, setSession] = useState<EditSessionManager | null>(null);
-  const [sessionVersion, setSessionVersion] = useState(0);
+  const [draftVersion, setDraftVersion] = useState(0);
+  const [gridResetVersion, setGridResetVersion] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [moduleRegistryVersion, setModuleRegistryVersion] = useState(0);
   const [baseThemeVersion, setBaseThemeVersion] = useState(0);
@@ -146,12 +149,16 @@ export function DashboardShell({
     [settings.tabs],
   );
 
-  const rerenderDraft = () => setSessionVersion((value) => value + 1);
+  const rerenderDraft = (resetGrid = false) => {
+    setDraftVersion((value) => value + 1);
+    if (resetGrid) setGridResetVersion((value) => value + 1);
+  };
 
   const selectTab = async (tabId: string) => {
     if (session) {
       session.cancel();
       setSession(null);
+      setGridResetVersion((value) => value + 1);
       setGalleryOpen(false);
     }
     const revision = settingsStore.snapshot.revision;
@@ -164,10 +171,17 @@ export function DashboardShell({
     );
   };
 
-  const startEditing = () => {
-    if (!dashboard) return;
-    setSession(new EditSessionManager(settingsStore.snapshot, dashboard.id));
-    setSessionVersion((value) => value + 1);
+  const startEditingTab = async (tab: TabDefinition) => {
+    if (session) return;
+    if (activeTab?.id !== tab.id) {
+      await selectTab(tab.id);
+    }
+    const snapshot = settingsStore.snapshot;
+    const target = snapshot.dashboards[tab.dashboardId];
+    if (!target) return;
+    setSession(new EditSessionManager(snapshot, target.id));
+    setDraftVersion((value) => value + 1);
+    setGridResetVersion((value) => value + 1);
   };
 
   const finishEditing = async () => {
@@ -175,6 +189,7 @@ export function DashboardShell({
     try {
       await session.commit(settingsStore);
       setSession(null);
+      setGridResetVersion((value) => value + 1);
       setGalleryOpen(false);
       new Notice("MyPage 布局已保存。");
     } catch (error) {
@@ -186,7 +201,8 @@ export function DashboardShell({
     if (!session) return;
     session.cancel();
     setSession(null);
-    setSessionVersion((value) => value + 1);
+    setDraftVersion((value) => value + 1);
+    setGridResetVersion((value) => value + 1);
     setGalleryOpen(false);
     new Notice("已取消主页改动；新安装的模块仍会保留。");
   };
@@ -199,7 +215,7 @@ export function DashboardShell({
       definition.defaultConfig,
       definition.moduleId ?? "mypage-core",
     );
-    rerenderDraft();
+    rerenderDraft(true);
     setGalleryOpen(false);
   };
 
@@ -249,6 +265,16 @@ export function DashboardShell({
   ) => {
     event.preventDefault();
     const menu = new Menu();
+    menu.addItem((item) =>
+      item
+        .setTitle("编辑主页")
+        .setIcon("pencil-ruler")
+        .setDisabled(session !== null)
+        .onClick(() => {
+          void startEditingTab(tab);
+        }),
+    );
+    menu.addSeparator();
     menu.addItem((item) =>
       item.setTitle("重命名").setIcon("pencil").onClick(() => {
         void promptDialog(app, {
@@ -311,6 +337,9 @@ export function DashboardShell({
   const dashboardTheme = dashboard
     ? themeService.dashboardStyle(settings, dashboard)
     : {};
+  const dashboardHeader = dashboard
+    ? resolveDashboardHeader(dashboard)
+    : undefined;
   useEffect(() => {
     const accent = dashboardTheme["--mypage-accent"];
     if (accent !== undefined) {
@@ -374,7 +403,7 @@ export function DashboardShell({
               menu.addItem((item) =>
                 item.setTitle("复制组件").setIcon("copy").onClick(() => {
                   session.duplicateWidget(widget.id);
-                  rerenderDraft();
+                  rerenderDraft(true);
                 }),
               );
               menu.addItem((item) =>
@@ -395,7 +424,7 @@ export function DashboardShell({
               menu.addItem((item) =>
                 item.setTitle("不放入分组").setIcon("ungroup").onClick(() => {
                   session.setWidgetGroup(widget.id);
-                  rerenderDraft();
+                  rerenderDraft(true);
                 }),
               );
               if (dashboard?.gridOptions.crossGroupDrag !== false) {
@@ -406,7 +435,7 @@ export function DashboardShell({
                       .setIcon("folder-input")
                       .onClick(() => {
                         session.setWidgetGroup(widget.id, group.id);
-                        rerenderDraft();
+                        rerenderDraft(true);
                       }),
                   );
                 }
@@ -452,7 +481,7 @@ export function DashboardShell({
             aria-label={`删除${widget.title ?? "组件"}`}
             onClick={() => {
               session.removeWidget(widget.id);
-              rerenderDraft();
+              rerenderDraft(true);
             }}
           >
             <Icon name="x" />
@@ -469,7 +498,7 @@ export function DashboardShell({
       data-compact-tabs={String(settings.uiState.compactTabs)}
       data-animation={settings.uiState.animationLevel}
       data-grid-lines={String(dashboard?.gridOptions.editGridLines ?? true)}
-      data-session-version={sessionVersion}
+      data-session-version={draftVersion}
       style={dashboardTheme}
     >
       <a class="mypage-skip-link" href="#mypage-dashboard-content">
@@ -527,7 +556,7 @@ export function DashboardShell({
                 }
                 onClick={() => {
                   session.undo();
-                  rerenderDraft();
+                  rerenderDraft(true);
                 }}
               >
                 <Icon name="undo-2" />
@@ -542,7 +571,7 @@ export function DashboardShell({
                 }
                 onClick={() => {
                   session.redo();
-                  rerenderDraft();
+                  rerenderDraft(true);
                 }}
               >
                 <Icon name="redo-2" />
@@ -590,22 +619,6 @@ export function DashboardShell({
                 <Icon name="eye" />
                 {hiddenTabs.length > 0 ? <span class="mypage-button-badge">{hiddenTabs.length}</span> : null}
               </button>
-              <button
-                class="mypage-icon-button"
-                type="button"
-                aria-label="刷新数据"
-                onClick={() => void onRefresh()}
-              >
-                <Icon name="refresh-cw" />
-              </button>
-              <button
-                class="mypage-edit-button"
-                type="button"
-                onClick={startEditing}
-              >
-                <Icon name="pencil" />
-                <span>编辑</span>
-              </button>
             </>
           )}
         </div>
@@ -629,31 +642,64 @@ export function DashboardShell({
           >
             <Icon name="folder-plus" />添加分组
           </button>
+          <button
+            type="button"
+            class="mypage-secondary-button"
+            onClick={() => {
+              if (!session || !dashboard) return;
+              new DashboardHeaderModal(app, dashboard, (header) => {
+                session.updateHeader(header);
+                rerenderDraft();
+              }).open();
+            }}
+          >
+            <Icon name="panel-top" />页头设置
+          </button>
         </div>
       ) : null}
 
       <main id="mypage-dashboard-content" class="mypage-dashboard" tabIndex={-1}>
         <div class="mypage-dashboard-heading">
           <div>
-            <p class="mypage-eyebrow">你的知识，一目了然</p>
-            <h1>{dashboard?.name ?? "未找到主页"}</h1>
+            {dashboardHeader?.subtitle ? (
+              <p
+                class="mypage-eyebrow"
+                style={{ fontSize: `${dashboardHeader.subtitleFontSize}px` }}
+              >
+                {dashboardHeader.subtitle}
+              </p>
+            ) : null}
+            <h1
+              style={
+                dashboardHeader
+                  ? { fontSize: `${dashboardHeader.titleFontSize}px` }
+                  : undefined
+              }
+            >
+              {dashboardHeader?.title ?? "未找到主页"}
+            </h1>
           </div>
-          <p class="mypage-dashboard-summary">
-            {dashboard
-              ? `${dashboard.widgetIds.length} 个组件 · ${settings.tabs.order.length} 个主页`
-              : "请在设置中恢复或创建主页。"}
-          </p>
+          {dashboardHeader?.showSummary ? (
+            <p class="mypage-dashboard-summary">
+              {`${dashboard!.widgetIds.length} 个组件 · ${settings.tabs.order.length} 个主页`}
+            </p>
+          ) : dashboard ? null : (
+            <p class="mypage-dashboard-summary">
+              请在设置中恢复或创建主页。
+            </p>
+          )}
         </div>
 
         {dashboard ? (
           <>
             {widgets.some((widget) => !widget.groupId) ? (
               <GridStackAdapter
+                key={`root-${dashboard.id}-${breakpoint}-${gridResetVersion}`}
                 breakpoint={breakpoint}
                 editing={session !== null}
                 gridOptions={dashboard.gridOptions}
                 widgets={widgets.filter((widget) => !widget.groupId)}
-                resetKey={sessionVersion}
+                resetKey={gridResetVersion}
                 onLayoutChange={(layouts) => {
                   if (session) {
                     session.updateLayouts(breakpoint, layouts);
@@ -692,7 +738,7 @@ export function DashboardShell({
                         aria-label={`删除分组 ${group.title}`}
                         onClick={() => {
                           session.removeGroup(group.id);
-                          rerenderDraft();
+                          rerenderDraft(true);
                         }}
                       >
                         <Icon name="folder-x" />
@@ -701,11 +747,12 @@ export function DashboardShell({
                   </header>
                   {!group.collapsed ? (
                     <GridStackAdapter
+                      key={`${group.id}-${breakpoint}-${gridResetVersion}`}
                       breakpoint={breakpoint}
                       editing={session !== null}
                       gridOptions={dashboard.gridOptions}
                       widgets={groupWidgets}
-                      resetKey={sessionVersion}
+                      resetKey={gridResetVersion}
                       onLayoutChange={(layouts) => {
                         if (session) {
                           session.updateLayouts(breakpoint, layouts);

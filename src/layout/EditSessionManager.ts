@@ -6,6 +6,7 @@ import {
 import type { SettingsStore } from "../persistence/SettingsStore";
 import type {
   Breakpoint,
+  DashboardHeader,
   DashboardGroup,
   MyPageSettings,
   WidgetInstance,
@@ -76,6 +77,12 @@ export class EditSessionManager {
         const widget = draft.widgets[widgetId];
         if (widget) widget.layouts[breakpoint] = structuredClone(layout);
       }
+    });
+  }
+
+  public updateHeader(header: DashboardHeader): DashboardDraft {
+    return this.mutate((draft) => {
+      draft.dashboard.header = structuredClone(header);
     });
   }
 

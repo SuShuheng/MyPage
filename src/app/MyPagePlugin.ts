@@ -163,7 +163,6 @@ export default class MyPagePlugin extends Plugin {
           this.themeService,
           this.moduleManager,
           this.capabilityBroker,
-          () => this.refreshAllData(true),
           () => this.openMarketplace(),
           () => this.pickModuleArchive(),
         ),
