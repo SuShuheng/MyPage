@@ -25,5 +25,6 @@ vi.mock("obsidian", () => ({
   Setting: class Setting {},
   WorkspaceLeaf: class WorkspaceLeaf {},
   normalizePath: (path: string) => path.replaceAll("\\", "/").replace(/\/+/g, "/"),
+  requestUrl: vi.fn(),
   setIcon: vi.fn(),
 }));

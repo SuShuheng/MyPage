@@ -4,7 +4,10 @@ import type {
   ThemeProfile,
 } from "../persistence/settings-types";
 import type { WorkerCoordinator } from "../workers/WorkerCoordinator";
-import { fetchGithub } from "../core/github-fetch";
+import {
+  fetchGithub,
+  type GithubRequest,
+} from "../core/github-fetch";
 import { normalizeRepository } from "../marketplace/GithubMarketClient";
 import { OFFICIAL_THEMES } from "./official-themes";
 
@@ -19,6 +22,7 @@ export class ThemeMarketplaceService {
   public constructor(
     private readonly store: SettingsStore,
     private readonly workers: WorkerCoordinator,
+    private readonly request: GithubRequest = fetchGithub,
   ) {}
 
   public officialThemes(): ThemeProfile[] {
@@ -132,26 +136,8 @@ export class ThemeMarketplaceService {
 
   private async fetch(repository: string): Promise<ThemeMarketIndex> {
     const repo = normalizeRepository(repository);
-    const branchResponse = await fetchGithub(
-      `https://api.github.com/repos/${repo}`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-      },
-    );
-    if (!branchResponse.ok) {
-      throw new Error(`无法读取主题市场仓库：HTTP ${branchResponse.status}`);
-    }
-    const repositoryInfo = await branchResponse.json() as {
-      default_branch?: unknown;
-    };
-    if (typeof repositoryInfo.default_branch !== "string") {
-      throw new Error("主题市场仓库未返回默认分支。");
-    }
-    const response = await fetchGithub(
-      `https://raw.githubusercontent.com/${repo}/${encodeURIComponent(repositoryInfo.default_branch)}/.mypage-theme-market/index.json`,
+    const response = await this.request(
+      `https://raw.githubusercontent.com/${repo}/HEAD/.mypage-theme-market/index.json`,
       { headers: { Accept: "application/json" } },
     );
     if (!response.ok) {

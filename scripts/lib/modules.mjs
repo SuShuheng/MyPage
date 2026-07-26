@@ -3,7 +3,9 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { zipSync } from "fflate";
 
-const REPRODUCIBLE_ZIP_DATE = new Date("1980-01-01T00:00:00.000Z");
+// ZIP stores DOS local-time fields without a timezone. Construct local
+// midnight so every build host writes the same 1980-01-01 00:00 value.
+const REPRODUCIBLE_ZIP_DATE = new Date(1980, 0, 1, 0, 0, 0);
 
 export const REQUIRED_MODULE_FILES = [
   "manifest.json",
@@ -76,7 +78,9 @@ export async function moduleDirectories(root) {
 export async function createModuleZip(directory) {
   const files = {};
   for (const file of REQUIRED_MODULE_FILES) {
-    files[file] = zipEntry(await readFile(path.join(directory, file)));
+    files[file] = zipEntry(
+      normalizeModuleText(await readFile(path.join(directory, file))),
+    );
   }
   const assets = path.join(directory, "assets");
   try {
@@ -95,6 +99,12 @@ async function addDirectory(files, directory, prefix) {
     if (entry.isDirectory()) await addDirectory(files, source, destination);
     else if (entry.isFile()) files[destination] = zipEntry(await readFile(source));
   }
+}
+
+export function normalizeModuleText(bytes) {
+  return new TextEncoder().encode(
+    new TextDecoder().decode(bytes).replace(/\r\n?/g, "\n"),
+  );
 }
 
 function zipEntry(bytes) {

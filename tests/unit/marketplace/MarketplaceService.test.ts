@@ -4,8 +4,51 @@ import { createDefaultSettings } from "../../../src/persistence/default-settings
 import type { SettingsStore } from "../../../src/persistence/SettingsStore";
 import type { GithubMarketClient } from "../../../src/marketplace/GithubMarketClient";
 import type { ModuleInstaller } from "../../../src/modules/ModuleInstaller";
+import manifestJson from "../../../manifest.json";
 
 describe("MarketplaceService detection policy", () => {
+  it("uses the immutable release snapshot when the official repo is added manually", async () => {
+    const settings = createDefaultSettings();
+    const store = {
+      snapshot: settings,
+      update: vi.fn(async (mutate: (draft: typeof settings) => void) => {
+        mutate(settings);
+      }),
+    };
+    const loaded = {
+      manifest: {
+        schemaVersion: 1 as const,
+        id: "mypage-official",
+        name: "Official",
+        repository: "SuShuHeng/MyPage",
+        index: ".mypage-market/index.json" as const,
+      },
+      index: {
+        schemaVersion: 1 as const,
+        generatedAt: "2026-01-01T00:00:00Z",
+        repository: "SuShuHeng/MyPage",
+        modules: [],
+      },
+      fetchedAt: 1,
+    };
+    const fetch = vi.fn();
+    const fetchRelease = vi.fn().mockResolvedValue(loaded);
+    const service = new MarketplaceService(
+      store as unknown as SettingsStore,
+      { fetch, fetchRelease } as unknown as GithubMarketClient,
+      {} as ModuleInstaller,
+    );
+
+    const sourceId = await service.addThirdParty("SuShuHeng/MyPage");
+
+    expect(sourceId).toBe("third-party:sushuheng/mypage");
+    expect(fetchRelease).toHaveBeenCalledWith(
+      "SuShuHeng/MyPage",
+      manifestJson.version,
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("never auto-checks a third-party market", async () => {
     const settings = createDefaultSettings();
     settings.markets.third = {

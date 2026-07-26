@@ -10,12 +10,13 @@ import type {
   MarketModuleVersion,
   ModuleUpdateStatus,
 } from "./market-types";
-import type { GithubMarketClient} from "./GithubMarketClient";
+import type { GithubMarketClient } from "./GithubMarketClient";
 import { normalizeRepository } from "./GithubMarketClient";
 import { validateMarketIndex } from "./market-schema";
 import bundledOfficialIndexJson from "../../.mypage-market/index.json";
 
 export type MarketCheckReason = "official-page-open" | "manual";
+const OFFICIAL_REPOSITORY = "SuShuHeng/MyPage";
 
 export class MarketplaceService {
   public constructor(
@@ -26,7 +27,9 @@ export class MarketplaceService {
 
   public async addThirdParty(repository: string): Promise<string> {
     const repo = normalizeRepository(repository);
-    const loaded = await this.client.fetch(repo);
+    const loaded = isOfficialRepository(repo)
+      ? await this.client.fetchRelease(repo, manifestJson.version)
+      : await this.client.fetch(repo);
     if ("notModified" in loaded) throw new Error("新市场不能返回未修改状态。");
     const id = `third-party:${repo.toLocaleLowerCase()}`;
     const snapshot = this.store.snapshot;
@@ -67,11 +70,18 @@ export class MarketplaceService {
     }
     let loaded: Awaited<ReturnType<GithubMarketClient["fetch"]>>;
     try {
-      loaded = await this.client.fetch(
-        source.repo,
-        source.cachedIndex?.etag,
-        signal,
-      );
+      loaded = source.type === "official" || isOfficialRepository(source.repo)
+        ? await this.client.fetchRelease(
+            source.repo,
+            manifestJson.version,
+            source.cachedIndex?.etag,
+            signal,
+          )
+        : await this.client.fetch(
+            source.repo,
+            source.cachedIndex?.etag,
+            signal,
+          );
     } catch (error) {
       if (source.type !== "official") throw error;
       const bundled = bundledOfficialIndex();
@@ -232,4 +242,8 @@ function bundledOfficialIndex(): MarketIndex {
     throw new Error("内置官方模块市场索引无效。");
   }
   return structuredClone(bundledOfficialIndexJson);
+}
+
+function isOfficialRepository(repository: string): boolean {
+  return repository.toLocaleLowerCase() === OFFICIAL_REPOSITORY.toLocaleLowerCase();
 }

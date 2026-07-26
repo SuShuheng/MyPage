@@ -19,6 +19,12 @@ export function assertGithubUrl(value: string | URL): URL {
   return url;
 }
 
+export type GithubRequest = (
+  input: string | URL,
+  init?: RequestInit,
+  maximumRedirects?: number,
+) => Promise<Response>;
+
 export async function fetchGithub(
   input: string | URL,
   init: RequestInit = {},

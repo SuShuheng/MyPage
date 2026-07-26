@@ -32,6 +32,7 @@ import { SecretReferenceService } from "../persistence/SecretReferenceService";
 import { PerformanceMonitor } from "../diagnostics/PerformanceMonitor";
 import { DiagnosticsService } from "../diagnostics/DiagnosticsService";
 import { ThemeMarketplaceService } from "../theme/ThemeMarketplaceService";
+import { requestGithubWithObsidian } from "./ObsidianGithubRequest";
 
 interface AppWithSettings extends App {
   setting?: {
@@ -114,13 +115,19 @@ export default class MyPagePlugin extends Plugin {
       void this.moduleRuntime.syncDataSources(this.dataEngine);
     });
     this.register(unsubscribeModuleSources);
-    const marketClient = new GithubMarketClient(this.workers);
+    const marketClient = new GithubMarketClient(
+      this.workers,
+      requestGithubWithObsidian,
+    );
     this.marketplace = new MarketplaceService(
       this.settingsStore,
       marketClient,
       this.moduleInstaller,
     );
-    const releaseClient = new GithubReleaseClient();
+    const releaseClient = new GithubReleaseClient(
+      "SuShuHeng/MyPage",
+      requestGithubWithObsidian,
+    );
     const updateInstaller = new UpdateInstaller(
       this.app.vault.adapter,
       pluginDirectory,
@@ -138,6 +145,7 @@ export default class MyPagePlugin extends Plugin {
     this.themeMarketplace = new ThemeMarketplaceService(
       this.settingsStore,
       this.workers,
+      requestGithubWithObsidian,
     );
     await this.themeMarketplace.syncInstalledOfficialThemes();
     this.secrets = new SecretReferenceService(this.app);

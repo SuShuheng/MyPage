@@ -5,10 +5,16 @@ import {
   validateMarketManifest,
 } from "./market-schema";
 import type { WorkerCoordinator } from "../workers/WorkerCoordinator";
-import { fetchGithub } from "../core/github-fetch";
+import {
+  fetchGithub,
+  type GithubRequest,
+} from "../core/github-fetch";
 
 export class GithubMarketClient {
-  public constructor(private readonly workers: WorkerCoordinator) {}
+  public constructor(
+    private readonly workers: WorkerCoordinator,
+    private readonly request: GithubRequest = fetchGithub,
+  ) {}
 
   public async fetch(
     repository: string,
@@ -16,20 +22,53 @@ export class GithubMarketClient {
     signal?: AbortSignal,
   ): Promise<LoadedMarketplace | { notModified: true }> {
     const repo = normalizeRepository(repository);
-    const branch = await defaultBranch(repo, signal);
-    const manifestUrl = rawUrl(repo, branch, ".mypage-market/manifest.json");
-    const indexUrl = rawUrl(repo, branch, ".mypage-market/index.json");
+    return this.fetchFromUrls(
+      repo,
+      rawUrl(repo, "HEAD", ".mypage-market/manifest.json"),
+      rawUrl(repo, "HEAD", ".mypage-market/index.json"),
+      cachedEtag,
+      signal,
+    );
+  }
+
+  public async fetchRelease(
+    repository: string,
+    releaseTag: string,
+    cachedEtag?: string,
+    signal?: AbortSignal,
+  ): Promise<LoadedMarketplace | { notModified: true }> {
+    const repo = normalizeRepository(repository);
+    if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(releaseTag)) {
+      throw new Error("官方市场 Release Tag 不是 SemVer。");
+    }
+    const releaseRoot =
+      `https://github.com/${repo}/releases/download/${encodeURIComponent(releaseTag)}`;
+    return this.fetchFromUrls(
+      repo,
+      `${releaseRoot}/module-market-manifest.json`,
+      `${releaseRoot}/module-market-index.json`,
+      cachedEtag,
+      signal,
+    );
+  }
+
+  private async fetchFromUrls(
+    repo: string,
+    manifestUrl: string,
+    indexUrl: string,
+    cachedEtag?: string,
+    signal?: AbortSignal,
+  ): Promise<LoadedMarketplace | { notModified: true }> {
     const headers: Record<string, string> = {
       Accept: "application/json",
     };
     if (cachedEtag) headers["If-None-Match"] = cachedEtag;
     const [manifestResponse, indexResponse] = await Promise.all([
-      fetchGithub(manifestUrl, {
+      this.request(manifestUrl, {
         headers: { Accept: "application/json" },
-        redirect: "error",
         signal: signal ?? null,
       }),
-      fetchGithub(indexUrl, { headers, signal: signal ?? null }),
+      this.request(indexUrl, { headers, signal: signal ?? null }),
     ]);
     if (indexResponse.status === 304) return { notModified: true };
     if (!manifestResponse.ok) {
@@ -73,7 +112,7 @@ export class GithubMarketClient {
   ): Promise<Uint8Array> {
     const parsed = new URL(url);
     if (parsed.protocol !== "https:") throw new Error("模块下载必须使用 HTTPS。");
-    const response = await fetchGithub(parsed, {
+    const response = await this.request(parsed, {
       signal: signal ?? null,
     });
     if (!response.ok) throw new Error(`模块下载失败：HTTP ${response.status}`);
@@ -97,33 +136,6 @@ export function normalizeRepository(repository: string): string {
 
 function rawUrl(repository: string, branch: string, path: string): string {
   return `https://raw.githubusercontent.com/${repository}/${encodeURIComponent(branch)}/${path}`;
-}
-
-async function defaultBranch(
-  repository: string,
-  signal?: AbortSignal,
-): Promise<string> {
-  const response = await fetchGithub(
-    `https://api.github.com/repos/${repository}`,
-    {
-      headers: {
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-      signal: signal ?? null,
-    },
-  );
-  if (!response.ok) throw new Error(`无法读取市场仓库信息：HTTP ${response.status}`);
-  const value = JSON.parse(await readLimitedText(response)) as unknown;
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    !("default_branch" in value) ||
-    typeof value.default_branch !== "string"
-  ) {
-    throw new Error("GitHub 仓库未返回 default_branch。");
-  }
-  return value.default_branch;
 }
 
 async function readLimitedText(response: Response): Promise<string> {

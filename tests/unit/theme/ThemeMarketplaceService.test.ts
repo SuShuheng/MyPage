@@ -30,4 +30,40 @@ describe("ThemeMarketplaceService", () => {
       sourceId: "official",
     });
   });
+
+  it("loads a third-party index through the injected request bridge and the HEAD ref", async () => {
+    const nativeFetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new TypeError("Failed to fetch"));
+    const settings = createDefaultSettings();
+    const store = {
+      snapshot: settings,
+      update: vi.fn(async (mutate: (draft: typeof settings) => void) => {
+        mutate(settings);
+      }),
+    };
+    const workers = {
+      run: vi.fn().mockResolvedValue({ valid: true, errors: [] }),
+    };
+    const request = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(officialIndex), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const service = new ThemeMarketplaceService(
+      store as unknown as SettingsStore,
+      workers as unknown as WorkerCoordinator,
+      request,
+    );
+
+    const sourceId = await service.addThirdParty("SuShuHeng/MyPage");
+
+    expect(sourceId).toBe("theme:sushuheng/mypage");
+    expect(request).toHaveBeenCalledOnce();
+    expect(String(request.mock.calls[0]?.[0])).toBe(
+      "https://raw.githubusercontent.com/SuShuHeng/MyPage/HEAD/.mypage-theme-market/index.json",
+    );
+    expect(nativeFetch).not.toHaveBeenCalled();
+  });
 });

@@ -1,7 +1,7 @@
 {
   "id": "mypage",
   "name": "MyPage",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.11.4",
   "description": "A deeply customizable, interactive visual homepage and DIY module platform for Obsidian.",
   "author": "苏书蘅（SuShuHeng）",

@@ -21,6 +21,7 @@ export class WorkspaceLeaf {}
 
 export const Platform = { isDesktopApp: true, isMobile: false };
 export const MarkdownRenderer = { render: vi.fn() };
+export const requestUrl = vi.fn();
 export const setIcon = vi.fn();
 
 export function normalizePath(path: string): string {
