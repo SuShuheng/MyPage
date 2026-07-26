@@ -12,3 +12,4 @@
 /tests/artifacts/
 /test-results/
 npm-debug.log*
+AGENTS.md
