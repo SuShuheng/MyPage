@@ -24,6 +24,7 @@
     "validate:market": "node scripts/validate-market.mjs",
     "validate:theme-market": "node scripts/validate-theme-market.mjs",
     "build:market": "node scripts/build-market.mjs",
+    "update:star-history": "node scripts/update-star-history.mjs",
     "package:module": "node scripts/package-module.mjs",
     "module:dev": "node scripts/package-module.mjs",
     "package:dry-run": "node scripts/package-release.mjs --dry-run",

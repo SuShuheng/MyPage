@@ -30,6 +30,7 @@ jobs:
       - run: npm run validate:modules
       - run: npm run build:market
       - run: npm run validate:market
+      - run: npm run validate:theme-market
       - run: npm run package:release
       - name: Create verified GitHub Release
         env:
@@ -40,12 +41,7 @@ jobs:
           if [[ "${GITHUB_REF_NAME}" == *-* ]]; then prerelease="--prerelease"; fi
           gh release create "${GITHUB_REF_NAME}" \
             --verify-tag \
+            --title "MyPage ${GITHUB_REF_NAME}" \
             --generate-notes \
             ${prerelease} \
-            dist/release/main.js \
-            dist/release/manifest.json \
-            dist/release/styles.css \
-            dist/release/SHA256SUMS \
-            dist/release/mypage-"${GITHUB_REF_NAME}".zip \
-            dist/modules/*.zip \
-            .mypage-market/index.json
+            dist/release/*

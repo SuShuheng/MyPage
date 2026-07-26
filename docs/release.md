@@ -34,7 +34,8 @@ Release 资产包括：
 - `main.js`、`manifest.json`、`styles.css`；
 - `SHA256SUMS`；
 - `mypage-version.zip`；
+- `mypage-platform-version.zip`（核心插件、官方模块、模块市场与主题市场）；
 - 每个 `module-id_version.zip`；
-- 官方 `.mypage-market/index.json`。
+- `module-market-*.json` 与 `theme-market-*.json` 市场资产。
 
 工作流失败不会创建或覆盖一个未通过门禁的正式版本。

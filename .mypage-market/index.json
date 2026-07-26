@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-26T06:22:29.189Z",
+  "generatedAt": "2026-07-26T12:03:50.013Z",
   "repository": "SuShuHeng/MyPage",
   "modules": [
     {
@@ -19,7 +19,7 @@
           "version": "1.0.0",
           "releaseTag": "1.0.0",
           "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/calendar-widget_1.0.0.zip",
-          "sha256": "36396cc2b5ad6ce2f07605f5e2835ed646ba63e5a9aa2e09bca38dbe7172f2f0",
+          "sha256": "4828325addc7021dfa717235815871c228c1e4311e468eca301f04bdfac1279f",
           "minMyPageVersion": "1.0.0",
           "platforms": [
             "desktop",
@@ -46,7 +46,7 @@
           "version": "1.0.0",
           "releaseTag": "1.0.0",
           "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/focus-timer_1.0.0.zip",
-          "sha256": "7b819f5e483d673d3dfb75b7875040a13b17dc6b74611c512a962999cc8ff88a",
+          "sha256": "f6514ccfb7036de1364f223126951567d1916cca08dca59bb42f994efd53b958",
           "minMyPageVersion": "1.0.0",
           "platforms": [
             "desktop",
@@ -77,7 +77,7 @@
           "version": "1.0.0",
           "releaseTag": "1.0.0",
           "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/hexo-insights_1.0.0.zip",
-          "sha256": "46e12f66e0c12b256cb581ec039ee8fe880a710f2dea7ca66def8588cff20670",
+          "sha256": "c8ad736a804b396a6cc267e4adfad8a843eba99a7427dee54cd673ffd2e3f9c9",
           "minMyPageVersion": "1.0.0",
           "platforms": [
             "desktop"
@@ -116,7 +116,7 @@
           "version": "1.0.0",
           "releaseTag": "1.0.0",
           "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/weather-widget_1.0.0.zip",
-          "sha256": "d96f82529fe5c66f4d372029adfa8f0d39a3642db3345fcecbe71be476a215f6",
+          "sha256": "ab9dee6673352c39d2cb195c1738301f0d7308ac0f93c874bef981c4c38f0850",
           "minMyPageVersion": "1.0.0",
           "platforms": [
             "desktop",
