@@ -1,0 +1,69 @@
+{
+  "name": "obsidian-mypage",
+  "version": "1.0.0",
+  "description": "A customizable visual homepage and DIY module platform for Obsidian.",
+  "main": "main.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "npm run typecheck && node esbuild.config.mjs production",
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "lint": "eslint .",
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:security": "vitest run --project security",
+    "test:performance": "vitest run --project performance",
+    "test:e2e": "node scripts/e2e-testdev.mjs",
+    "e2e:prepare": "node scripts/prepare-e2e-vault.mjs",
+    "test:all": "vitest run",
+    "test:watch": "vitest",
+    "dev:deploy": "node scripts/deploy-test-vault.mjs",
+    "validate:modules": "node scripts/validate-module.mjs --all",
+    "validate:market": "node scripts/validate-market.mjs",
+    "build:market": "node scripts/build-market.mjs",
+    "package:module": "node scripts/package-module.mjs",
+    "module:dev": "node scripts/package-module.mjs",
+    "package:dry-run": "node scripts/package-release.mjs --dry-run",
+    "package:release": "node scripts/package-release.mjs",
+    "version:verify": "node scripts/verify-version.mjs",
+    "version:patch": "node scripts/bump-version.mjs patch",
+    "version:minor": "node scripts/bump-version.mjs minor",
+    "version:major": "node scripts/bump-version.mjs major"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "keywords": [
+    "obsidian",
+    "dashboard",
+    "homepage",
+    "widgets",
+    "visualization"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "ajv": "8.20.0",
+    "echarts": "6.1.0",
+    "fflate": "0.8.3",
+    "gridstack": "13.1.0",
+    "preact": "10.29.7",
+    "semver": "7.8.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.4",
+    "@testing-library/preact": "3.2.4",
+    "@types/node": "22.15.17",
+    "@types/semver": "7.7.1",
+    "esbuild": "0.28.1",
+    "eslint": "9.39.4",
+    "eslint-plugin-obsidianmd": "0.4.1",
+    "globals": "17.6.0",
+    "happy-dom": "20.11.1",
+    "obsidian": "1.13.1",
+    "playwright-core": "^1.62.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.65.0",
+    "vitest": "4.1.10"
+  }
+}

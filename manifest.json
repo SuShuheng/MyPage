@@ -1,0 +1,11 @@
+{
+  "id": "mypage",
+  "name": "MyPage",
+  "version": "1.0.0",
+  "minAppVersion": "1.11.4",
+  "description": "A deeply customizable, interactive visual homepage and DIY module platform for Obsidian.",
+  "author": "SuShuHeng",
+  "authorUrl": "https://github.com/SuShuHeng",
+  "fundingUrl": "https://github.com/sponsors/SuShuHeng",
+  "isDesktopOnly": false
+}

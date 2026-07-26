@@ -1,0 +1,29 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: var(--mypage-text);
+}
+
+#mypage-root {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 14px;
+}
+
+h3,
+p {
+  margin: 0;
+}
+
+p {
+  color: var(--mypage-mutedText);
+}
+
+.hello-badge {
+  justify-self: start;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--mypage-accent);
+  background: color-mix(in srgb, var(--mypage-accent) 12%, transparent);
+  font-size: 12px;
+}

@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "codex/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run test:integration
+      - run: npm run test:security
+      - run: npm run test:performance
+      - run: npm run build
+      - run: npm run validate:modules
+      - run: npm run build:market
+      - run: npm run validate:market
+      - run: npm run package:dry-run
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mypage-ci-package
+          path: |
+            dist/release/
+            dist/modules/
+          if-no-files-found: error

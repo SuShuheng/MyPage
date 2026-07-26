@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-25T16:30:25.783Z",
+  "repository": "SuShuHeng/MyPage",
+  "modules": [
+    {
+      "id": "hello-widget",
+      "name": "Hello Widget",
+      "description": "展示 MyPage DIY 模块 API、主题桥和实时数据订阅的最小示例。",
+      "author": "MyPage Contributors",
+      "license": "Apache-2.0",
+      "path": "diy-plugins/hello-widget",
+      "repository": "SuShuHeng/MyPage",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "releaseTag": "1.0.0",
+          "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/hello-widget_1.0.0.zip",
+          "sha256": "6bd10713e228c91aad622e995be51be33b0421162c7e4e1bd1ece9e1ac2eaa52",
+          "minMyPageVersion": "1.0.0",
+          "platforms": [
+            "desktop",
+            "mobile"
+          ],
+          "permissions": [],
+          "prerelease": false
+        }
+      ]
+    },
+    {
+      "id": "hexo-insights",
+      "name": "可配置博客生命周期",
+      "description": "以可配置规则对比 Vault 原稿、外部发布目录与 Git 状态；核心不包含任何 Hexo 业务逻辑。",
+      "author": "MyPage Contributors",
+      "license": "Apache-2.0",
+      "path": "diy-plugins/hexo-insights",
+      "repository": "SuShuHeng/MyPage",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "releaseTag": "1.0.0",
+          "downloadUrl": "https://github.com/SuShuHeng/MyPage/releases/download/1.0.0/hexo-insights_1.0.0.zip",
+          "sha256": "9c6af4023490bac1badcf1ae8e60d060fb9dbaa70e0b04bee6172eaf0a4ef5b9",
+          "minMyPageVersion": "1.0.0",
+          "platforms": [
+            "desktop"
+          ],
+          "permissions": [
+            {
+              "capability": "externalFs.read",
+              "scope": {
+                "paths": []
+              }
+            },
+            {
+              "capability": "git.read",
+              "scope": {
+                "repositories": []
+              }
+            }
+          ],
+          "prerelease": false
+        }
+      ]
+    }
+  ]
+}

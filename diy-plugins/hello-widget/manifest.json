@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "hello-widget",
+  "name": "Hello Widget",
+  "version": "1.0.0",
+  "description": "展示 MyPage DIY 模块 API、主题桥和实时数据订阅的最小示例。",
+  "author": "MyPage Contributors",
+  "license": "Apache-2.0",
+  "minMyPageVersion": "1.0.0",
+  "platforms": ["desktop", "mobile"],
+  "entry": "main.js",
+  "styles": "styles.css",
+  "configSchema": "config.schema.json",
+  "trust": "sandbox",
+  "permissions": [],
+  "contributions": [
+    {
+      "id": "hello",
+      "kind": "widget",
+      "name": "Hello Widget",
+      "description": "安全沙箱、主题令牌和数据订阅示例。",
+      "icon": "sparkles",
+      "defaultSize": { "w": 4, "h": 3 },
+      "configSchema": "config.schema.json"
+    },
+    {
+      "id": "hello-dashboard",
+      "kind": "dashboardTemplate",
+      "name": "Hello Dashboard"
+    }
+  ]
+}

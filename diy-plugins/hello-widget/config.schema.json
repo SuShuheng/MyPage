@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "标题",
+      "default": "Hello from a sandbox"
+    }
+  }
+}

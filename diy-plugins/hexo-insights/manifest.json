@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "id": "hexo-insights",
+  "name": "可配置博客生命周期",
+  "version": "1.0.0",
+  "description": "以可配置规则对比 Vault 原稿、外部发布目录与 Git 状态；核心不包含任何 Hexo 业务逻辑。",
+  "author": "MyPage Contributors",
+  "license": "Apache-2.0",
+  "minMyPageVersion": "1.0.0",
+  "platforms": ["desktop"],
+  "entry": "main.js",
+  "styles": "styles.css",
+  "configSchema": "config.schema.json",
+  "trust": "trusted",
+  "permissions": [
+    {
+      "capability": "externalFs.read",
+      "reason": "列出用户指定的已发布文章目录，用于和 Vault 原稿进行只读对比。",
+      "suggestedScope": { "paths": [] }
+    },
+    {
+      "capability": "git.read",
+      "reason": "读取用户指定博客仓库的状态和最近提交，不执行写入。",
+      "suggestedScope": { "repositories": [] }
+    }
+  ],
+  "contributions": [
+    {
+      "id": "lifecycle-summary",
+      "kind": "widget",
+      "name": "博客生命周期概览",
+      "description": "原稿、已发布、待发布与仓库状态指标。",
+      "icon": "milestone",
+      "defaultSize": { "w": 6, "h": 3 },
+      "configSchema": "config.schema.json"
+    },
+    {
+      "id": "pending-posts",
+      "kind": "widget",
+      "name": "待发布文章",
+      "description": "按用户规则对比原稿与发布目录。",
+      "icon": "file-clock",
+      "defaultSize": { "w": 6, "h": 5 },
+      "configSchema": "config.schema.json"
+    },
+    {
+      "id": "blog-heatmap",
+      "kind": "widget",
+      "name": "博客创作热力图",
+      "description": "展示所选原稿文件夹的年度创作活跃度。",
+      "icon": "grid-3x3",
+      "defaultSize": { "w": 8, "h": 4 },
+      "configSchema": "config.schema.json"
+    },
+    {
+      "id": "writing-trend",
+      "kind": "widget",
+      "name": "博客创作趋势",
+      "description": "按月展示所选原稿记录的创作趋势。",
+      "icon": "chart-no-axes-combined",
+      "defaultSize": { "w": 8, "h": 4 },
+      "configSchema": "config.schema.json"
+    },
+    {
+      "id": "repository-status",
+      "kind": "widget",
+      "name": "发布仓库状态",
+      "description": "只读展示 Git 工作区状态。",
+      "icon": "git-branch",
+      "defaultSize": { "w": 4, "h": 4 },
+      "configSchema": "config.schema.json"
+    },
+    {
+      "id": "blog-records-source",
+      "kind": "dataSource",
+      "name": "博客生命周期记录"
+    },
+    {
+      "id": "repository-history-source",
+      "kind": "dataSource",
+      "name": "发布仓库提交记录"
+    },
+    {
+      "id": "lifecycle-rules",
+      "kind": "transform",
+      "name": "用户生命周期规则"
+    },
+    {
+      "id": "open-publishing-workflow",
+      "kind": "action",
+      "name": "打开用户配置的发布工作流",
+      "description": "声明一个可由 Dashboard 快捷操作绑定的通用发布动作；实际执行仍需用户授权。"
+    },
+    {
+      "id": "blog-dashboard",
+      "kind": "dashboardTemplate",
+      "name": "博客创作 Dashboard"
+    },
+    {
+      "id": "blog-settings",
+      "kind": "settings",
+      "name": "博客数据源设置"
+    }
+  ]
+}

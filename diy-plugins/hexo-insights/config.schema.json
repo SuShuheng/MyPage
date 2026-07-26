@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "publishedDirectory": {
+      "type": "string",
+      "title": "已发布文章目录",
+      "description": "任意静态站点生成器的发布源目录，不限定 Hexo。"
+    },
+    "repository": {
+      "type": "string",
+      "title": "发布 Git 仓库"
+    },
+    "sourceField": {
+      "type": "string",
+      "title": "原稿路径字段",
+      "default": "path"
+    },
+    "publishedExtension": {
+      "type": "string",
+      "title": "发布文件扩展名",
+      "default": ".md"
+    },
+    "lifecycleRules": {
+      "type": "array",
+      "title": "用户生命周期规则",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "expression"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "expression": { "type": "string" }
+        }
+      }
+    }
+  }
+}

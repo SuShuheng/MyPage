@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "mypage-official",
+  "name": "MyPage 官方模块市场",
+  "description": "由 MyPage 仓库维护、遵循统一市场协议的官方模块索引。",
+  "repository": "SuShuHeng/MyPage",
+  "index": ".mypage-market/index.json"
+}

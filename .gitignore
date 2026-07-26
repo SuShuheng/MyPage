@@ -1,0 +1,14 @@
+/raw/
+/node_modules/
+/.npm-cache/
+/coverage/
+/dist/
+/main.js
+/main.js.map
+/styles.css
+/*.zip
+/.DS_Store
+/.e2e/
+/tests/artifacts/
+/test-results/
+npm-debug.log*

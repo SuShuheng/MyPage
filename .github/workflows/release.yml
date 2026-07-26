@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+          cache: npm
+      - run: npm ci
+      - run: npm run version:verify
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:all
+      - run: npm run build
+      - run: npm run validate:modules
+      - run: npm run build:market
+      - run: npm run validate:market
+      - run: npm run package:release
+      - name: Create verified GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          prerelease=""
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then prerelease="--prerelease"; fi
+          gh release create "${GITHUB_REF_NAME}" \
+            --verify-tag \
+            --generate-notes \
+            ${prerelease} \
+            dist/release/main.js \
+            dist/release/manifest.json \
+            dist/release/styles.css \
+            dist/release/SHA256SUMS \
+            dist/release/mypage-"${GITHUB_REF_NAME}".zip \
+            dist/modules/*.zip \
+            .mypage-market/index.json
