@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360" role="img" aria-labelledby="title description">
-  <title id="title">SuShuHeng/MyPage GitHub Star history</title>
-  <desc id="description">Cumulative GitHub stars over time. Current total: 0.</desc>
+  <title id="title">SuShuheng/MyPage GitHub Star history</title>
+  <desc id="description">Cumulative GitHub stars over time. Current total: 1.</desc>
   <style>
     .background{fill:#fff}.title{fill:#20232a;font:700 20px system-ui,sans-serif}.total{fill:#6b7280;font:500 13px system-ui,sans-serif}.axis{stroke:#d8dee8;stroke-width:1}.label{fill:#77808f;font:12px system-ui,sans-serif}.area{fill:#8b5cf6;fill-opacity:.13}.line{fill:none;stroke:#7c3aed;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.dot{fill:#7c3aed}.empty{fill:#77808f;font:500 15px system-ui,sans-serif;text-anchor:middle}
     @media (prefers-color-scheme:dark){.background{fill:#11131a}.title{fill:#f3f4f6}.total,.label,.empty{fill:#9ca3af}.axis{stroke:#303543}.area{fill:#a78bfa;fill-opacity:.18}.line{stroke:#a78bfa}.dot{fill:#a78bfa}}
   </style>
   <rect class="background" width="960" height="360" rx="14"/>
-  <text class="title" x="62" y="32">SuShuHeng/MyPage · Star History</text>
-  <text class="total" x="926" y="32" text-anchor="end">0 stars</text>
+  <text class="title" x="62" y="32">SuShuheng/MyPage · Star History</text>
+  <text class="total" x="926" y="32" text-anchor="end">1 stars</text>
   <line class="axis" x1="62" y1="308" x2="926" y2="308"/><text class="label" x="50" y="312" text-anchor="end">0</text><line class="axis" x1="62" y1="308" x2="926" y2="308"/><text class="label" x="50" y="312" text-anchor="end">0</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text>
-  <text class="label" x="62" y="340" text-anchor="start">Jul 26, 2026</text><text class="label" x="494" y="340" text-anchor="middle">Jul 26, 2026</text><text class="label" x="926" y="340" text-anchor="end">Jul 27, 2026</text>
-  <path class="area" d="M62.0,308.0 L926.0,308.0 L926.0,308 L62.0,308 Z"/>
-  <path class="line" d="M62.0,308.0 L926.0,308.0"/>
-  <circle class="dot" cx="926" cy="308" r="4"/>
-  <text class="empty" x="480" y="187">No stars yet — be the first!</text>
+  <text class="label" x="62" y="340" text-anchor="start">Jul 25, 2026</text><text class="label" x="494" y="340" text-anchor="middle">Jul 26, 2026</text><text class="label" x="926" y="340" text-anchor="end">Jul 27, 2026</text>
+  <path class="area" d="M62.0,308.0 L494.0,66.0 L926.0,66.0 L926.0,308 L62.0,308 Z"/>
+  <path class="line" d="M62.0,308.0 L494.0,66.0 L926.0,66.0"/>
+  <circle class="dot" cx="926" cy="66" r="4"/>
+  
 </svg>
