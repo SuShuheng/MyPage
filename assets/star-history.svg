@@ -9,9 +9,9 @@
   <text class="title" x="62" y="32">SuShuheng/MyPage · Star History</text>
   <text class="total" x="926" y="32" text-anchor="end">1 stars</text>
   <line class="axis" x1="62" y1="308" x2="926" y2="308"/><text class="label" x="50" y="312" text-anchor="end">0</text><line class="axis" x1="62" y1="308" x2="926" y2="308"/><text class="label" x="50" y="312" text-anchor="end">0</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text>
-  <text class="label" x="62" y="340" text-anchor="start">Jul 25, 2026</text><text class="label" x="494" y="340" text-anchor="middle">Jul 31, 2026</text><text class="label" x="926" y="340" text-anchor="end">Aug 06, 2026</text>
-  <path class="area" d="M62.0,308.0 L134.0,66.0 L206.0,66.0 L278.0,66.0 L350.0,66.0 L422.0,66.0 L494.0,66.0 L566.0,66.0 L638.0,66.0 L710.0,66.0 L782.0,66.0 L854.0,66.0 L926.0,66.0 L926.0,308 L62.0,308 Z"/>
-  <path class="line" d="M62.0,308.0 L134.0,66.0 L206.0,66.0 L278.0,66.0 L350.0,66.0 L422.0,66.0 L494.0,66.0 L566.0,66.0 L638.0,66.0 L710.0,66.0 L782.0,66.0 L854.0,66.0 L926.0,66.0"/>
+  <text class="label" x="62" y="340" text-anchor="start">Jul 25, 2026</text><text class="label" x="494" y="340" text-anchor="middle">Jul 31, 2026</text><text class="label" x="926" y="340" text-anchor="end">Aug 07, 2026</text>
+  <path class="area" d="M62.0,308.0 L128.5,66.0 L194.9,66.0 L261.4,66.0 L327.8,66.0 L394.3,66.0 L460.8,66.0 L527.2,66.0 L593.7,66.0 L660.2,66.0 L726.6,66.0 L793.1,66.0 L859.5,66.0 L926.0,66.0 L926.0,308 L62.0,308 Z"/>
+  <path class="line" d="M62.0,308.0 L128.5,66.0 L194.9,66.0 L261.4,66.0 L327.8,66.0 L394.3,66.0 L460.8,66.0 L527.2,66.0 L593.7,66.0 L660.2,66.0 L726.6,66.0 L793.1,66.0 L859.5,66.0 L926.0,66.0"/>
   <circle class="dot" cx="926" cy="66" r="4"/>
   
 </svg>
