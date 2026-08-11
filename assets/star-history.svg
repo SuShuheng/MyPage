@@ -9,9 +9,9 @@
   <text class="title" x="62" y="32">SuShuheng/MyPage · Star History</text>
   <text class="total" x="926" y="32" text-anchor="end">1 stars</text>
   <line class="axis" x1="62" y1="308" x2="926" y2="308"/><text class="label" x="50" y="312" text-anchor="end">0</text><line class="axis" x1="62" y1="308" x2="926" y2="308"/><text class="label" x="50" y="312" text-anchor="end">0</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text>
-  <text class="label" x="62" y="340" text-anchor="start">Jul 25, 2026</text><text class="label" x="494" y="340" text-anchor="middle">Aug 02, 2026</text><text class="label" x="926" y="340" text-anchor="end">Aug 10, 2026</text>
-  <path class="area" d="M62.0,308.0 L116.0,66.0 L170.0,66.0 L224.0,66.0 L278.0,66.0 L332.0,66.0 L386.0,66.0 L440.0,66.0 L494.0,66.0 L548.0,66.0 L602.0,66.0 L656.0,66.0 L710.0,66.0 L764.0,66.0 L818.0,66.0 L872.0,66.0 L926.0,66.0 L926.0,308 L62.0,308 Z"/>
-  <path class="line" d="M62.0,308.0 L116.0,66.0 L170.0,66.0 L224.0,66.0 L278.0,66.0 L332.0,66.0 L386.0,66.0 L440.0,66.0 L494.0,66.0 L548.0,66.0 L602.0,66.0 L656.0,66.0 L710.0,66.0 L764.0,66.0 L818.0,66.0 L872.0,66.0 L926.0,66.0"/>
+  <text class="label" x="62" y="340" text-anchor="start">Jul 25, 2026</text><text class="label" x="494" y="340" text-anchor="middle">Aug 02, 2026</text><text class="label" x="926" y="340" text-anchor="end">Aug 11, 2026</text>
+  <path class="area" d="M62.0,308.0 L112.8,66.0 L163.6,66.0 L214.5,66.0 L265.3,66.0 L316.1,66.0 L366.9,66.0 L417.8,66.0 L468.6,66.0 L519.4,66.0 L570.2,66.0 L621.1,66.0 L671.9,66.0 L722.7,66.0 L773.5,66.0 L824.4,66.0 L875.2,66.0 L926.0,66.0 L926.0,308 L62.0,308 Z"/>
+  <path class="line" d="M62.0,308.0 L112.8,66.0 L163.6,66.0 L214.5,66.0 L265.3,66.0 L316.1,66.0 L366.9,66.0 L417.8,66.0 L468.6,66.0 L519.4,66.0 L570.2,66.0 L621.1,66.0 L671.9,66.0 L722.7,66.0 L773.5,66.0 L824.4,66.0 L875.2,66.0 L926.0,66.0"/>
   <circle class="dot" cx="926" cy="66" r="4"/>
   
 </svg>
