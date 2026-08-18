@@ -9,9 +9,9 @@
   <text class="title" x="62" y="32">SuShuheng/MyPage · Star History</text>
   <text class="total" x="926" y="32" text-anchor="end">1 stars</text>
   <line class="axis" x1="62" y1="308" x2="926" y2="308"/><text class="label" x="50" y="312" text-anchor="end">0</text><line class="axis" x1="62" y1="308" x2="926" y2="308"/><text class="label" x="50" y="312" text-anchor="end">0</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text><line class="axis" x1="62" y1="66" x2="926" y2="66"/><text class="label" x="50" y="70" text-anchor="end">1</text>
-  <text class="label" x="62" y="340" text-anchor="start">Jul 25, 2026</text><text class="label" x="494" y="340" text-anchor="middle">Aug 05, 2026</text><text class="label" x="926" y="340" text-anchor="end">Aug 17, 2026</text>
-  <path class="area" d="M62.0,308.0 L99.6,66.0 L137.1,66.0 L174.7,66.0 L212.3,66.0 L249.8,66.0 L287.4,66.0 L325.0,66.0 L362.5,66.0 L400.1,66.0 L437.7,66.0 L475.2,66.0 L512.8,66.0 L550.3,66.0 L587.9,66.0 L625.5,66.0 L663.0,66.0 L700.6,66.0 L738.2,66.0 L775.7,66.0 L813.3,66.0 L850.9,66.0 L888.4,66.0 L926.0,66.0 L926.0,308 L62.0,308 Z"/>
-  <path class="line" d="M62.0,308.0 L99.6,66.0 L137.1,66.0 L174.7,66.0 L212.3,66.0 L249.8,66.0 L287.4,66.0 L325.0,66.0 L362.5,66.0 L400.1,66.0 L437.7,66.0 L475.2,66.0 L512.8,66.0 L550.3,66.0 L587.9,66.0 L625.5,66.0 L663.0,66.0 L700.6,66.0 L738.2,66.0 L775.7,66.0 L813.3,66.0 L850.9,66.0 L888.4,66.0 L926.0,66.0"/>
+  <text class="label" x="62" y="340" text-anchor="start">Jul 25, 2026</text><text class="label" x="494" y="340" text-anchor="middle">Aug 06, 2026</text><text class="label" x="926" y="340" text-anchor="end">Aug 18, 2026</text>
+  <path class="area" d="M62.0,308.0 L98.0,66.0 L134.0,66.0 L170.0,66.0 L206.0,66.0 L242.0,66.0 L278.0,66.0 L314.0,66.0 L350.0,66.0 L386.0,66.0 L422.0,66.0 L458.0,66.0 L494.0,66.0 L530.0,66.0 L566.0,66.0 L602.0,66.0 L638.0,66.0 L674.0,66.0 L710.0,66.0 L746.0,66.0 L782.0,66.0 L818.0,66.0 L854.0,66.0 L890.0,66.0 L926.0,66.0 L926.0,308 L62.0,308 Z"/>
+  <path class="line" d="M62.0,308.0 L98.0,66.0 L134.0,66.0 L170.0,66.0 L206.0,66.0 L242.0,66.0 L278.0,66.0 L314.0,66.0 L350.0,66.0 L386.0,66.0 L422.0,66.0 L458.0,66.0 L494.0,66.0 L530.0,66.0 L566.0,66.0 L602.0,66.0 L638.0,66.0 L674.0,66.0 L710.0,66.0 L746.0,66.0 L782.0,66.0 L818.0,66.0 L854.0,66.0 L890.0,66.0 L926.0,66.0"/>
   <circle class="dot" cx="926" cy="66" r="4"/>
   
 </svg>
